@@ -1,0 +1,72 @@
+{
+  "name": "bedtime-backend",
+  "version": "1.0.0",
+  "description": "Kids Bedtime Stories MVP Backend - Node.js + Express + MongoDB",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "dev:admin": "cd admin && npm run dev",
+    "build": "echo 'No build step needed for JS'",
+    "build:admin": "cd admin && npm run build",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/ tests/ scripts/",
+    "lint:fix": "eslint src/ tests/ scripts/ --fix",
+    "format": "prettier --write src/ tests/ scripts/",
+    "seed": "node scripts/seedContent.js",
+    "migrate": "node scripts/migrate.js",
+    "verify": "node scripts/verify-setup.js"
+  },
+  "keywords": [
+    "bedtime",
+    "stories",
+    "kids",
+    "express",
+    "mongodb",
+    "jwt",
+    "google-auth"
+  ],
+  "author": "Bedtime Stories Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.2",
+    "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "express-slow-down": "^2.0.1",
+    "google-auth-library": "^9.4.1",
+    "helmet": "^7.1.0",
+    "ioredis": "^5.3.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.0.3",
+    "multer": "^1.4.5-lts.1",
+    "pino": "^8.17.2",
+    "pino-http": "^8.6.1",
+    "pino-pretty": "^10.3.1",
+    "prom-client": "^15.1.0",
+    "swagger-ui-express": "^5.0.0",
+    "uuid": "^9.0.1",
+    "yamljs": "^0.3.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-node": "^11.1.0",
+    "jest": "^29.7.0",
+    "mongodb-memory-server": "^9.1.3",
+    "nodemon": "^3.0.2",
+    "prettier": "^3.1.1",
+    "supertest": "^6.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

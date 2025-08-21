@@ -1,0 +1,982 @@
+openapi: 3.0.3
+info:
+  title: Bedtime Stories API
+  description: |
+    Kids Bedtime Stories MVP Backend API
+    
+    ## Authentication
+    This API uses Google OAuth for authentication and JWT tokens for authorization.
+    
+    ## Rate Limiting
+    - Public endpoints: 60 requests/minute per IP
+    - Auth endpoints: 10 requests/minute per IP
+    - Authenticated endpoints: 100 requests/minute per user
+    
+    ## Response Format
+    All responses follow a standard envelope format:
+    ```json
+    {
+      "success": true,
+      "data": {},
+      "error": [],
+      "message": "Success message"
+    }
+    ```
+  version: 1.0.0
+  contact:
+    name: Bedtime Stories API Support
+    email: support@bedtimestories.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Development server
+  - url: https://api.bedtimestories.com/api/v1
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+paths:
+  # Health endpoints
+  /healthz:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Check if the service is healthy
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /readyz:
+    get:
+      tags: [Health]
+      summary: Readiness check
+      description: Check if the service is ready to accept requests
+      security: []
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service is not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Auth endpoints
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register new user
+      description: Register a new user with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name, confirmPassword]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+                  example: "user@example.com"
+                password:
+                  type: string
+                  minLength: 6
+                  maxLength: 100
+                  description: User's password
+                  example: "securepassword123"
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  description: User's full name
+                  example: "John Doe"
+                confirmPassword:
+                  type: string
+                  description: Password confirmation
+                  example: "securepassword123"
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Validation error or user already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login user
+      description: Login user with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+                  example: "user@example.com"
+                password:
+                  type: string
+                  description: User's password
+                  example: "securepassword123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/verify-email:
+    post:
+      tags: [Authentication]
+      summary: Verify email address
+      description: Verify user's email address with verification token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+                  description: Email verification token
+                  example: "abc123def456"
+      responses:
+        '200':
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/forgot-password:
+    post:
+      tags: [Authentication]
+      summary: Request password reset
+      description: Send password reset email to user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+                  example: "user@example.com"
+      responses:
+        '200':
+          description: Password reset email sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /auth/reset-password:
+    post:
+      tags: [Authentication]
+      summary: Reset password
+      description: Reset user's password with reset token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password, confirmPassword]
+              properties:
+                token:
+                  type: string
+                  description: Password reset token
+                  example: "abc123def456"
+                password:
+                  type: string
+                  minLength: 6
+                  maxLength: 100
+                  description: New password
+                  example: "newsecurepassword123"
+                confirmPassword:
+                  type: string
+                  description: Password confirmation
+                  example: "newsecurepassword123"
+      responses:
+        '200':
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/google:
+    post:
+      tags: [Authentication]
+      summary: Authenticate with Google
+      description: Authenticate user using Google ID token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idToken]
+              properties:
+                idToken:
+                  type: string
+                  description: Google ID token from client
+                  example: "eyJhbGciOiJSUzI1NiIsImtpZCI6..."
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      description: Get new access token using refresh token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+                  description: Valid refresh token
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6..."
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Logout user
+      description: Revoke refresh token and logout user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+                  description: Refresh token to revoke
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /me:
+    get:
+      tags: [Authentication]
+      summary: Get current user profile
+      description: Get authenticated user's profile information
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    patch:
+      tags: [Authentication]
+      summary: Update user profile
+      description: Update authenticated user's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 100
+                  example: "John Doe"
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+
+  # Kids endpoints
+  /kids:
+    get:
+      tags: [Kids]
+      summary: Get all kids for current user
+      description: Retrieve all kid profiles for the authenticated user
+      responses:
+        '200':
+          description: Kids retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/KidProfile'
+
+    post:
+      tags: [Kids]
+      summary: Create new kid profile
+      description: Create a new kid profile for the authenticated user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateKidRequest'
+      responses:
+        '201':
+          description: Kid profile created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/KidProfile'
+
+  /kids/{id}:
+    get:
+      tags: [Kids]
+      summary: Get kid by ID
+      description: Get a specific kid profile by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+          description: Kid profile ID
+      responses:
+        '200':
+          description: Kid retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/KidProfile'
+
+    patch:
+      tags: [Kids]
+      summary: Update kid profile
+      description: Update a kid profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateKidRequest'
+      responses:
+        '200':
+          description: Kid profile updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/KidProfile'
+
+    delete:
+      tags: [Kids]
+      summary: Delete kid profile
+      description: Delete a kid profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Kid profile deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /kids/{id}/preferences:
+    get:
+      tags: [Kids]
+      summary: Get kid preferences
+      description: Get preferences for a specific kid
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Preferences retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/KidPreferences'
+
+    put:
+      tags: [Kids]
+      summary: Update kid preferences
+      description: Update preferences for a specific kid
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KidPreferences'
+      responses:
+        '200':
+          description: Preferences updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/KidProfile'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token obtained from /auth/google or /auth/refresh
+
+    M2MAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: M2M JWT token for service-to-service communication
+
+  schemas:
+    # Response schemas
+    SuccessResponse:
+      type: object
+      required: [success, data, error, message]
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          nullable: true
+        error:
+          type: array
+          items:
+            type: string
+          example: []
+        message:
+          type: string
+          example: "Operation completed successfully"
+
+    ErrorResponse:
+      type: object
+      required: [success, data, error, message]
+      properties:
+        success:
+          type: boolean
+          example: false
+        data:
+          type: object
+          nullable: true
+          example: null
+        error:
+          type: array
+          items:
+            oneOf:
+              - type: string
+              - type: object
+          example: ["VALIDATION_ERROR"]
+        message:
+          type: string
+          example: "An error occurred"
+
+    HealthResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [healthy, unhealthy, ready, not_ready]
+                timestamp:
+                  type: string
+                  format: date-time
+                version:
+                  type: string
+                environment:
+                  type: string
+                components:
+                  type: object
+                  properties:
+                    mongodb:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                        message:
+                          type: string
+                    redis:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                        message:
+                          type: string
+
+    # Auth schemas
+    AuthResponse:
+      type: object
+      required: [user, accessToken, refreshToken]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        accessToken:
+          type: string
+          description: JWT access token (15 minutes TTL)
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6..."
+        refreshToken:
+          type: string
+          description: JWT refresh token (30 days TTL)
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6..."
+
+    User:
+      type: object
+      required: [id, email, provider, roles, subscription, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          description: User ID
+          example: "507f1f77bcf86cd799439011"
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "user@example.com"
+        name:
+          type: string
+          nullable: true
+          description: User's display name
+          example: "John Doe"
+        provider:
+          type: string
+          enum: [google]
+          description: Authentication provider
+          example: "google"
+        roles:
+          type: array
+          items:
+            type: string
+            enum: [user, admin]
+          description: User roles
+          example: ["user"]
+        subscription:
+          $ref: '#/components/schemas/Subscription'
+        lastLoginAt:
+          type: string
+          format: date-time
+          description: Last login timestamp
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    Subscription:
+      type: object
+      required: [plan, status]
+      properties:
+        plan:
+          type: string
+          enum: [free, premium, family]
+          description: Subscription plan
+          example: "free"
+        status:
+          type: string
+          enum: [active, inactive, cancelled, past_due]
+          description: Subscription status
+          example: "active"
+        currentPeriodEnd:
+          type: string
+          format: date-time
+          nullable: true
+          description: Current billing period end date
+        provider:
+          type: string
+          enum: [stripe, apple, google]
+          nullable: true
+          description: Payment provider
+        providerRef:
+          type: string
+          nullable: true
+          description: Provider subscription reference
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last subscription update
+
+    # Kid schemas
+    KidProfile:
+      type: object
+      required: [id, userId, name, ageRange, preferences, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          description: Kid profile ID
+          example: "507f1f77bcf86cd799439012"
+        userId:
+          type: string
+          description: Parent user ID
+          example: "507f1f77bcf86cd799439011"
+        name:
+          type: string
+          description: Kid's name
+          example: "Emma"
+        ageRange:
+          type: string
+          enum: ['3-5', '6-8', '9-12']
+          description: Kid's age range
+          example: "6-8"
+        avatarKey:
+          type: string
+          description: Avatar identifier
+          example: "avatar-unicorn"
+        preferences:
+          $ref: '#/components/schemas/KidPreferences'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    KidPreferences:
+      type: object
+      properties:
+        sleepGoals:
+          type: array
+          items:
+            type: string
+          maxItems: 10
+          description: Sleep goals for the kid
+          example: ["Fall asleep faster", "Sleep through the night"]
+        tags:
+          type: array
+          items:
+            type: string
+            enum: [folk_tales, affirmations, meditations, music, adventure, fantasy, educational, calming]
+          maxItems: 10
+          description: Preferred content tags
+          example: ["folk_tales", "calming"]
+
+    CreateKidRequest:
+      type: object
+      required: [name, ageRange]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Kid's name
+          example: "Emma"
+        ageRange:
+          type: string
+          enum: ['3-5', '6-8', '9-12']
+          description: Kid's age range
+          example: "6-8"
+        avatarKey:
+          type: string
+          maxLength: 100
+          description: Avatar identifier
+          example: "avatar-unicorn"
+
+    UpdateKidRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: "Emma"
+        ageRange:
+          type: string
+          enum: ['3-5', '6-8', '9-12']
+          example: "6-8"
+        avatarKey:
+          type: string
+          maxLength: 100
+          example: "avatar-unicorn"
+
+    # Content schemas
+    Content:
+      type: object
+      required: [id, type, title, slug, durationSec, ageRange, tags, audioUrl, imageUrl, publishedAt]
+      properties:
+        id:
+          type: string
+          description: Content ID
+          example: "507f1f77bcf86cd799439013"
+        type:
+          type: string
+          enum: [story, affirmation, meditation, music]
+          description: Content type
+          example: "story"
+        title:
+          type: string
+          description: Content title
+          example: "The Sleepy Forest"
+        slug:
+          type: string
+          description: URL-friendly identifier
+          example: "the-sleepy-forest"
+        durationSec:
+          type: integer
+          minimum: 1
+          maximum: 3600
+          description: Duration in seconds
+          example: 480
+        ageRange:
+          type: string
+          enum: ['3-5', '6-8', '9-12']
+          description: Target age range
+          example: "6-8"
+        tags:
+          type: array
+          items:
+            type: string
+            enum: [folk_tales, affirmations, meditations, music, adventure, fantasy, educational, calming]
+          description: Content tags
+          example: ["folk_tales", "calming"]
+        language:
+          type: string
+          description: Content language
+          example: "en"
+        region:
+          type: string
+          description: Content region
+          example: "US"
+        audioUrl:
+          type: string
+          format: uri
+          description: Audio file URL
+          example: "https://cdn.example.com/audio/the-sleepy-forest.mp3"
+        imageUrl:
+          type: string
+          format: uri
+          description: Cover image URL
+          example: "https://cdn.example.com/images/the-sleepy-forest.jpg"
+        isFeatured:
+          type: boolean
+          description: Whether content is featured
+          example: false
+        popularityScore:
+          type: number
+          minimum: 0
+          description: Popularity score
+          example: 42.5
+        publishedAt:
+          type: string
+          format: date-time
+          description: Publication date
+
+tags:
+  - name: Health
+    description: Health and readiness checks
+  - name: Authentication
+    description: User authentication and profile management
+  - name: Kids
+    description: Kid profile management
+  - name: Content
+    description: Content management and retrieval
+  - name: Explore
+    description: Content discovery and search
+  - name: Home
+    description: Home page content and recommendations
+  - name: Favorites
+    description: User favorites management
+  - name: Subscription
+    description: Subscription and billing management
+  - name: Internal
+    description: Internal M2M endpoints
