@@ -1,0 +1,1210 @@
+{
+  "info": {
+    "name": "Bedtime Stories API",
+    "description": "Complete API collection for the Bedtime Stories backend service",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "kidId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "contentId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"name\": \"John Doe\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.success && response.data) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "        pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
+                  "        pm.collectionVariables.set('userId', response.data.user.id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Google Auth",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"GOOGLE_ID_TOKEN_HERE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/google",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "google"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"preferences\": {\n    \"language\": \"en\",\n    \"region\": \"US\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"EMAIL_VERIFICATION_TOKEN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-email",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify-email"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot-password"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"RESET_TOKEN\",\n  \"password\": \"NewSecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👶 Kids Management",
+      "item": [
+        {
+          "name": "Get All Kids",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/kids",
+              "host": ["{{baseUrl}}"],
+              "path": ["kids"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Kid Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.success && response.data) {",
+                  "        pm.collectionVariables.set('kidId', response.data.id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Emma\",\n  \"age\": 6,\n  \"ageRange\": \"6-8\",\n  \"preferences\": {\n    \"favoriteTypes\": [\"story\", \"music\"],\n    \"bedtime\": \"20:00\",\n    \"language\": \"en\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/kids",
+              "host": ["{{baseUrl}}"],
+              "path": ["kids"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Kid by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/kids/{{kidId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["kids", "{{kidId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Kid Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Emma Updated\",\n  \"age\": 7,\n  \"ageRange\": \"6-8\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/kids/{{kidId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["kids", "{{kidId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Kid Profile",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/kids/{{kidId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["kids", "{{kidId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Kid Preferences",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/kids/{{kidId}}/preferences",
+              "host": ["{{baseUrl}}"],
+              "path": ["kids", "{{kidId}}", "preferences"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Kid Preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"favoriteTypes\": [\"story\", \"meditation\"],\n  \"bedtime\": \"20:30\",\n  \"language\": \"en\",\n  \"autoplay\": true,\n  \"volume\": 0.8\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/kids/{{kidId}}/preferences",
+              "host": ["{{baseUrl}}"],
+              "path": ["kids", "{{kidId}}", "preferences"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔍 Explore & Discovery",
+      "item": [
+        {
+          "name": "Get Content Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/explore/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["explore", "categories"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Browse Content List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/explore/list?type=story&ageRange=6-8&sort=popular&limit=10&offset=0&isFeatured=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["explore", "list"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "story",
+                  "description": "Content type: story, music, meditation, affirmation"
+                },
+                {
+                  "key": "ageRange",
+                  "value": "6-8",
+                  "description": "Age range: 3-5, 6-8, 9-12"
+                },
+                {
+                  "key": "sort",
+                  "value": "popular",
+                  "description": "Sort by: popular, new, duration"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of items (1-50)"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Pagination offset"
+                },
+                {
+                  "key": "isFeatured",
+                  "value": "true",
+                  "description": "Filter featured content"
+                },
+                {
+                  "key": "tags",
+                  "value": "adventure,fantasy",
+                  "description": "Comma-separated tags",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/explore/search?q=dragon&type=story&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["explore", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "dragon",
+                  "description": "Search query"
+                },
+                {
+                  "key": "type",
+                  "value": "story",
+                  "description": "Content type filter"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of results"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📚 Content",
+      "item": [
+        {
+          "name": "Get Content by Slug",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.success && response.data) {",
+                  "        pm.collectionVariables.set('contentId', response.data._id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content/the-sleepy-dragon",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "the-sleepy-dragon"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Increment Content Popularity (Play)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kidId\": \"{{kidId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/content/the-sleepy-dragon/play",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "the-sleepy-dragon", "play"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Content Categories (Alt)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["content", "categories"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🏠 Home",
+      "item": [
+        {
+          "name": "Get Home Content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/home?kidId={{kidId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["home"],
+              "query": [
+                {
+                  "key": "kidId",
+                  "value": "{{kidId}}",
+                  "description": "Kid ID for personalized content"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "❤️ Favorites",
+      "item": [
+        {
+          "name": "Get Favorites",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/favorites?kidId={{kidId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["favorites"],
+              "query": [
+                {
+                  "key": "kidId",
+                  "value": "{{kidId}}",
+                  "description": "Kid ID to get favorites for"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add to Favorites",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kidId\": \"{{kidId}}\",\n  \"contentId\": \"{{contentId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/favorites",
+              "host": ["{{baseUrl}}"],
+              "path": ["favorites"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Add Favorites",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kidId\": \"{{kidId}}\",\n  \"contentIds\": [\"{{contentId}}\", \"ANOTHER_CONTENT_ID\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/favorites/bulk",
+              "host": ["{{baseUrl}}"],
+              "path": ["favorites", "bulk"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check if Favorited",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/favorites/check/{{contentId}}?kidId={{kidId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["favorites", "check", "{{contentId}}"],
+              "query": [
+                {
+                  "key": "kidId",
+                  "value": "{{kidId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove from Favorites",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/favorites/{{contentId}}?kidId={{kidId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["favorites", "{{contentId}}"],
+              "query": [
+                {
+                  "key": "kidId",
+                  "value": "{{kidId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Favorite Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/favorites/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["favorites", "stats"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove All Kid Favorites",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/favorites/kids/{{kidId}}/all",
+              "host": ["{{baseUrl}}"],
+              "path": ["favorites", "kids", "{{kidId}}", "all"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "💳 Subscription",
+      "item": [
+        {
+          "name": "Get Current Subscription",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subscription",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscription"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Checkout Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan\": \"premium\",\n  \"successUrl\": \"https://yourapp.com/success\",\n  \"cancelUrl\": \"https://yourapp.com/cancel\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/subscription/checkout",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscription", "checkout"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Subscription",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subscription/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscription", "cancel"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🏥 Health & Monitoring",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/healthz",
+              "host": ["{{baseUrl}}"],
+              "path": ["healthz"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Readiness Check",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/readyz",
+              "host": ["{{baseUrl}}"],
+              "path": ["readyz"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Metrics",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics",
+              "host": ["{{baseUrl}}"],
+              "path": ["metrics"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔧 Internal (M2M)",
+      "item": [
+        {
+          "name": "Process Payment Event",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "M2M_TOKEN_HERE",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"subscription.created\",\n  \"userId\": \"{{userId}}\",\n  \"subscriptionId\": \"sub_123\",\n  \"plan\": \"premium\",\n  \"status\": \"active\",\n  \"currentPeriodStart\": \"2024-01-01T00:00:00Z\",\n  \"currentPeriodEnd\": \"2024-02-01T00:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/internal/payments/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["internal", "payments", "events"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👑 Admin (Requires Admin Role)",
+      "item": [
+        {
+          "name": "Content Management",
+          "item": [
+            {
+              "name": "Get Content Stats",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/content/admin/stats",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["content", "admin", "stats"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Admin Content List",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/content?limit=20&offset=0&sort=createdAt&order=desc",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "content"],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    },
+                    {
+                      "key": "offset",
+                      "value": "0"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "createdAt"
+                    },
+                    {
+                      "key": "order",
+                      "value": "desc"
+                    },
+                    {
+                      "key": "search",
+                      "value": "dragon",
+                      "disabled": true
+                    },
+                    {
+                      "key": "type",
+                      "value": "story",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Content",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"story\",\n  \"title\": \"The Magic Forest Adventure\",\n  \"durationSec\": 480,\n  \"ageRange\": \"6-8\",\n  \"tags\": [\"adventure\", \"fantasy\"],\n  \"language\": \"en\",\n  \"region\": \"US\",\n  \"audioUrl\": \"https://cdn.example.com/audio/magic-forest.mp3\",\n  \"imageUrl\": \"https://cdn.example.com/images/magic-forest.jpg\",\n  \"isFeatured\": true,\n  \"isActive\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/content",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "content"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Content by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/content/{{contentId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "content", "{{contentId}}"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Content",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Updated Magic Forest Adventure\",\n  \"durationSec\": 500,\n  \"isFeatured\": false,\n  \"tags\": [\"adventure\", \"fantasy\", \"educational\"]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/content/{{contentId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "content", "{{contentId}}"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Content",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/content/{{contentId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "content", "{{contentId}}"]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "User Management",
+          "item": [
+            {
+              "name": "Get Users List",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/users?limit=20&offset=0&sort=createdAt&order=desc",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "users"],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    },
+                    {
+                      "key": "offset",
+                      "value": "0"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "createdAt"
+                    },
+                    {
+                      "key": "order",
+                      "value": "desc"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get User by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/users/{{userId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "users", "{{userId}}"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update User",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Updated Name\",\n  \"role\": \"user\",\n  \"isActive\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/users/{{userId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "users", "{{userId}}"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete User",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/users/{{userId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "users", "{{userId}}"]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Analytics & Stats",
+          "item": [
+            {
+              "name": "Get Overview Stats",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/stats/overview",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "stats", "overview"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get User Stats",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/stats/users",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "stats", "users"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Engagement Stats",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/stats/engagement",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "stats", "engagement"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Subscription Stats",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/subscription/admin/stats",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["subscription", "admin", "stats"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Most Favorited Content",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/favorites/admin/most-favorited",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["favorites", "admin", "most-favorited"]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "System Management",
+          "item": [
+            {
+              "name": "Get System Health",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/system/health",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "system", "health"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Clear Cache",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/system/cache/clear",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "system", "cache", "clear"]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
