@@ -1,3 +1,4 @@
+
 require('dotenv').config();
 
 const config = {
@@ -42,16 +43,16 @@ const config = {
   // Rate Limiting
   rateLimit: {
     public: {
-      windowMs: 60 * 1000, // 1 minute
-      max: 60, // 60 requests per minute per IP
+      windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60 * 1000,
+      max: parseInt(process.env.RATE_LIMIT_PUBLIC_MAX) || 60,
     },
     auth: {
-      windowMs: 60 * 1000, // 1 minute
-      max: 10, // 10 requests per minute per IP for auth endpoints
+      windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60 * 1000,
+      max: parseInt(process.env.RATE_LIMIT_AUTH_MAX) || 10,
     },
     perUser: {
-      windowMs: 60 * 1000, // 1 minute
-      max: 100, // 100 requests per minute per user
+      windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60 * 1000,
+      max: parseInt(process.env.RATE_LIMIT_PER_USER_MAX) || 100,
     },
   },
   
