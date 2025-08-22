@@ -6,7 +6,8 @@ const config = {
   
   // Database
   mongoUri: process.env.MONGO_URI || 'mongodb://localhost:27017/bedtime',
-  redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
+  // TODO: Redis temporarily disabled
+  // redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
   
   // JWT
   jwt: {

@@ -1,7 +1,8 @@
 const favoriteRepository = require('../repositories/favoriteRepository');
 const kidRepository = require('../repositories/kidRepository');
 const contentRepository = require('../repositories/contentRepository');
-const { invalidateCache } = require('../loaders/redisLoader');
+// TODO: Redis temporarily disabled
+// const { invalidateCache } = require('../loaders/redisLoader');
 const logger = require('../utils/logger');
 
 class FavoriteService {
@@ -24,8 +25,9 @@ class FavoriteService {
     try {
       const favorite = await favoriteRepository.addFavorite(userId, kidId, contentId);
       
+      // TODO: Redis temporarily disabled
       // Invalidate user's cache
-      await invalidateCache.user(userId);
+      // await invalidateCache.user(userId);
       
       logger.info({ 
         userId, 
@@ -58,8 +60,9 @@ class FavoriteService {
       throw new Error('Favorite not found');
     }
     
+    // TODO: Redis temporarily disabled
     // Invalidate user's cache
-    await invalidateCache.user(userId);
+    // await invalidateCache.user(userId);
     
     logger.info({ userId, kidId, contentId }, 'Content removed from favorites');
     
@@ -181,8 +184,9 @@ class FavoriteService {
     
     const result = await favoriteRepository.removeAllByKidId(kidId);
     
+    // TODO: Redis temporarily disabled
     // Invalidate user's cache
-    await invalidateCache.user(userId);
+    // await invalidateCache.user(userId);
     
     logger.info({ userId, kidId, deletedCount: result.deletedCount }, 'All favorites removed for kid');
     

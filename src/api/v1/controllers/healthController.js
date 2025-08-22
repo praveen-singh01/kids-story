@@ -1,5 +1,6 @@
 const { checkMongoHealth } = require('../../../loaders/mongoLoader');
-const { checkRedisHealth } = require('../../../loaders/redisLoader');
+// TODO: Redis temporarily disabled
+// const { checkRedisHealth } = require('../../../loaders/redisLoader');
 const { success, error } = require('../../../utils/envelope');
 const config = require('../../../config');
 
@@ -10,9 +11,11 @@ class HealthController {
   async healthCheck(req, res, next) {
     try {
       const mongoHealth = await checkMongoHealth();
-      const redisHealth = await checkRedisHealth();
-      
-      const isHealthy = mongoHealth.status === 'healthy' && redisHealth.status === 'healthy';
+      // TODO: Redis temporarily disabled
+      // const redisHealth = await checkRedisHealth();
+      const redisHealth = { status: 'disabled', message: 'Redis temporarily disabled' };
+
+      const isHealthy = mongoHealth.status === 'healthy'; // && redisHealth.status === 'healthy';
       
       const healthData = {
         status: isHealthy ? 'healthy' : 'unhealthy',
@@ -38,9 +41,11 @@ class HealthController {
   async readinessCheck(req, res, next) {
     try {
       const mongoHealth = await checkMongoHealth();
-      const redisHealth = await checkRedisHealth();
-      
-      const isReady = mongoHealth.status === 'healthy' && redisHealth.status === 'healthy';
+      // TODO: Redis temporarily disabled
+      // const redisHealth = await checkRedisHealth();
+      const redisHealth = { status: 'disabled', message: 'Redis temporarily disabled' };
+
+      const isReady = mongoHealth.status === 'healthy'; // && redisHealth.status === 'healthy';
       
       const readinessData = {
         status: isReady ? 'ready' : 'not_ready',

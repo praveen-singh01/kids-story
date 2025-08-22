@@ -1,6 +1,7 @@
 const { verifyGoogleIdToken } = require('../utils/googleAuth');
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('../utils/jwt');
-const { cache } = require('../loaders/redisLoader');
+// TODO: Redis temporarily disabled
+// const { cache } = require('../loaders/redisLoader');
 const userRepository = require('../repositories/userRepository');
 const logger = require('../utils/logger');
 
@@ -36,9 +37,10 @@ class AuthService {
       const accessToken = generateAccessToken(user._id.toString());
       const { token: refreshToken, jti } = generateRefreshToken(user._id.toString());
 
+      // TODO: Redis temporarily disabled
       // Store refresh token JTI in cache
-      const refreshTtlSeconds = this.parseTimeToSeconds('30d');
-      await cache.set(`refresh:${jti}`, user._id.toString(), refreshTtlSeconds);
+      // const refreshTtlSeconds = this.parseTimeToSeconds('30d');
+      // await cache.set(`refresh:${jti}`, user._id.toString(), refreshTtlSeconds);
 
       logger.info({ userId: user._id, email: user.email }, 'User registered successfully');
 
@@ -83,9 +85,10 @@ class AuthService {
       const accessToken = generateAccessToken(user._id.toString());
       const { token: refreshToken, jti } = generateRefreshToken(user._id.toString());
 
+      // TODO: Redis temporarily disabled
       // Store refresh token JTI in cache
-      const refreshTtlSeconds = this.parseTimeToSeconds('30d');
-      await cache.set(`refresh:${jti}`, user._id.toString(), refreshTtlSeconds);
+      // const refreshTtlSeconds = this.parseTimeToSeconds('30d');
+      // await cache.set(`refresh:${jti}`, user._id.toString(), refreshTtlSeconds);
 
       logger.info({ userId: user._id, email: user.email }, 'User logged in successfully');
 
@@ -206,9 +209,10 @@ class AuthService {
       const accessToken = generateAccessToken(user._id.toString());
       const { token: refreshToken, jti } = generateRefreshToken(user._id.toString());
       
+      // TODO: Redis temporarily disabled
       // Store refresh token JTI in cache for revocation tracking
-      const refreshTtlSeconds = this.parseTimeToSeconds('30d');
-      await cache.set(`refresh:${jti}`, user._id.toString(), refreshTtlSeconds);
+      // const refreshTtlSeconds = this.parseTimeToSeconds('30d');
+      // await cache.set(`refresh:${jti}`, user._id.toString(), refreshTtlSeconds);
       
       logger.info({ userId: user._id, email: user.email }, 'User authenticated with Google');
       
@@ -237,17 +241,18 @@ class AuthService {
       
       const { sub: userId, jti } = decoded;
       
+      // TODO: Redis temporarily disabled - skip token validation
       // Check if refresh token is blacklisted
-      const isBlacklisted = await cache.isBlacklisted(`refresh:${jti}`);
-      if (isBlacklisted) {
-        throw new Error('Refresh token has been revoked');
-      }
-      
+      // const isBlacklisted = await cache.isBlacklisted(`refresh:${jti}`);
+      // if (isBlacklisted) {
+      //   throw new Error('Refresh token has been revoked');
+      // }
+
       // Check if refresh token exists in cache
-      const cachedUserId = await cache.get(`refresh:${jti}`);
-      if (!cachedUserId || cachedUserId !== userId) {
-        throw new Error('Refresh token not found or invalid');
-      }
+      // const cachedUserId = await cache.get(`refresh:${jti}`);
+      // if (!cachedUserId || cachedUserId !== userId) {
+      //   throw new Error('Refresh token not found or invalid');
+      // }
       
       // Get user
       const user = await userRepository.findById(userId);
@@ -259,12 +264,13 @@ class AuthService {
       const newAccessToken = generateAccessToken(userId);
       const { token: newRefreshToken, jti: newJti } = generateRefreshToken(userId);
       
+      // TODO: Redis temporarily disabled
       // Blacklist old refresh token
-      const refreshTtlSeconds = this.parseTimeToSeconds('30d');
-      await cache.blacklist(`refresh:${jti}`, refreshTtlSeconds);
-      
+      // const refreshTtlSeconds = this.parseTimeToSeconds('30d');
+      // await cache.blacklist(`refresh:${jti}`, refreshTtlSeconds);
+
       // Store new refresh token
-      await cache.set(`refresh:${newJti}`, userId, refreshTtlSeconds);
+      // await cache.set(`refresh:${newJti}`, userId, refreshTtlSeconds);
       
       logger.info({ userId }, 'Access token refreshed');
       
@@ -287,12 +293,13 @@ class AuthService {
       const decoded = verifyRefreshToken(refreshToken);
       const { jti } = decoded;
       
+      // TODO: Redis temporarily disabled
       // Blacklist refresh token
-      const refreshTtlSeconds = this.parseTimeToSeconds('30d');
-      await cache.blacklist(`refresh:${jti}`, refreshTtlSeconds);
-      
+      // const refreshTtlSeconds = this.parseTimeToSeconds('30d');
+      // await cache.blacklist(`refresh:${jti}`, refreshTtlSeconds);
+
       // Remove from active tokens
-      await cache.del(`refresh:${jti}`);
+      // await cache.del(`refresh:${jti}`);
       
       logger.info({ userId: decoded.sub }, 'User logged out');
       
@@ -334,8 +341,9 @@ class AuthService {
       throw new Error('User not found');
     }
     
+    // TODO: Redis temporarily disabled
     // Invalidate user cache
-    await cache.del(`user:${userId}`);
+    // await cache.del(`user:${userId}`);
     
     return this.sanitizeUser(user);
   }
@@ -388,8 +396,9 @@ class AuthService {
    */
   async revokeAllTokens(userId) {
     // This would require storing all active refresh tokens per user
+    // TODO: Redis temporarily disabled
     // For now, we'll just invalidate the user cache
-    await cache.del(`user:${userId}`);
+    // await cache.del(`user:${userId}`);
     
     logger.info({ userId }, 'All tokens revoked for user');
     return true;

@@ -20,7 +20,8 @@ async function startServer() {
         port: config.port,
         nodeEnv: config.nodeEnv,
         mongoUri: config.mongoUri.replace(/\/\/.*@/, '//***:***@'),
-        redisUrl: config.redisUrl.replace(/\/\/.*@/, '//***:***@'),
+        // TODO: Redis temporarily disabled
+        // redisUrl: config.redisUrl.replace(/\/\/.*@/, '//***:***@'),
       }, `🚀 Bedtime Stories API server started on port ${config.port}`);
       
       logger.info(`📚 API Documentation: http://localhost:${config.port}/docs`);
@@ -42,10 +43,11 @@ async function startServer() {
         try {
           // Close database connections
           const { closeMongo } = require('./loaders/mongoLoader');
-          const { closeRedis } = require('./loaders/redisLoader');
-          
+          // TODO: Redis temporarily disabled
+          // const { closeRedis } = require('./loaders/redisLoader');
+
           await closeMongo();
-          await closeRedis();
+          // await closeRedis();
           
           logger.info('Database connections closed');
           logger.info('Graceful shutdown completed');

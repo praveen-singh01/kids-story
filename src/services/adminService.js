@@ -3,7 +3,8 @@ const userRepository = require('../repositories/userRepository');
 const kidRepository = require('../repositories/kidRepository');
 const favoriteRepository = require('../repositories/favoriteRepository');
 const { Content, User, KidProfile } = require('../models');
-const { cache } = require('../loaders/redisLoader');
+// TODO: Redis temporarily disabled
+// const { cache } = require('../loaders/redisLoader');
 const config = require('../config');
 const logger = require('../utils/logger');
 
@@ -269,8 +270,9 @@ class AdminService {
     Object.assign(user, updateData);
     await user.save();
     
+    // TODO: Redis temporarily disabled
     // Clear user cache
-    await cache.del(`user:${id}`);
+    // await cache.del(`user:${id}`);
     
     logger.info({ userId: id, updates: Object.keys(updateData) }, 'User updated by admin');
     
@@ -295,8 +297,9 @@ class AdminService {
     // Delete the user
     await User.findByIdAndDelete(id);
     
+    // TODO: Redis temporarily disabled
     // Clear user cache
-    await cache.del(`user:${id}`);
+    // await cache.del(`user:${id}`);
     
     logger.info({ userId: id, email: user.email }, 'User deleted by admin');
     
@@ -383,12 +386,13 @@ class AdminService {
       'categories'
     ];
     
-    for (const pattern of cacheKeys) {
-      const keys = await cache.keys(pattern);
-      if (keys.length > 0) {
-        await cache.del(...keys);
-      }
-    }
+    // TODO: Redis temporarily disabled
+    // for (const pattern of cacheKeys) {
+    //   const keys = await cache.keys(pattern);
+    //   if (keys.length > 0) {
+    //     await cache.del(...keys);
+    //   }
+    // }
   }
 
   /**

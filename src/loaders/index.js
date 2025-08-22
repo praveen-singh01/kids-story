@@ -15,7 +15,8 @@ async function initLoaders(app) {
     // 1. Initialize databases first
     logger.info('Initializing databases...');
     await mongoLoader();
-    await redisLoader();
+    // TODO: Redis temporarily disabled - uncomment when Redis is available
+    // await redisLoader();
     
     // 2. Initialize Express middleware
     logger.info('Initializing Express middleware...');

@@ -1,6 +1,46 @@
-const { cache } = require('../../../loaders/redisLoader');
+// TODO: Redis temporarily disabled - using mock cache
+// const { cache } = require('../../../loaders/redisLoader');
 const { success } = require('../../../utils/envelope');
 const logger = require('../../../utils/logger');
+
+// Mock cache implementation (in-memory, for development only)
+const mockCache = new Map();
+const mockCacheExpiry = new Map();
+
+const cache = {
+  async get(key) {
+    const expiry = mockCacheExpiry.get(key);
+    if (expiry && Date.now() > expiry) {
+      mockCache.delete(key);
+      mockCacheExpiry.delete(key);
+      return null;
+    }
+    return mockCache.get(key) || null;
+  },
+
+  async set(key, value, ttlSeconds = 300) {
+    mockCache.set(key, value);
+    mockCacheExpiry.set(key, Date.now() + (ttlSeconds * 1000));
+    return 'OK';
+  },
+
+  async del(pattern) {
+    if (pattern.includes('*')) {
+      // Handle pattern deletion
+      const prefix = pattern.replace('*', '');
+      for (const key of mockCache.keys()) {
+        if (key.startsWith(prefix)) {
+          mockCache.delete(key);
+          mockCacheExpiry.delete(key);
+        }
+      }
+    } else {
+      mockCache.delete(pattern);
+      mockCacheExpiry.delete(pattern);
+    }
+    return 1;
+  }
+};
 
 /**
  * Cache middleware for GET requests
