@@ -1,0 +1,1280 @@
+{
+	"info": {
+		"_postman_id": "kids-story-api-prod",
+		"name": "Kids Story API - Production",
+		"description": "Complete Postman collection for Kids Story API production endpoints at milo.netaapp.in",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{access_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://milo.netaapp.in/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "refresh_token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "🔐 Authentication",
+			"item": [
+				{
+					"name": "Login (Email/Password)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.data) {",
+									"        pm.collectionVariables.set('access_token', response.data.accessToken);",
+									"        pm.collectionVariables.set('refresh_token', response.data.refreshToken);",
+									"        console.log('Tokens saved successfully');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@milo.netaapp.in\",\n  \"password\": \"MiloAdmin2024!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Google Authentication",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idToken\": \"YOUR_GOOGLE_ID_TOKEN_HERE\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/google",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "google"]
+						}
+					}
+				},
+				{
+					"name": "Register New User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"Test User\",\n  \"confirmPassword\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "register"]
+						}
+					}
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/refresh",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "refresh"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "📚 Content & Categories",
+			"item": [
+				{
+					"name": "Get Categories (Working)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/content/categories",
+							"host": ["{{base_url}}"],
+							"path": ["content", "categories"]
+						}
+					}
+				},
+				{
+					"name": "Get Content by Slug",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/content/the-sleepy-forest",
+							"host": ["{{base_url}}"],
+							"path": ["content", "the-sleepy-forest"]
+						}
+					}
+				},
+				{
+					"name": "Increment Content Popularity",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/content/the-sleepy-forest/play",
+							"host": ["{{base_url}}"],
+							"path": ["content", "the-sleepy-forest", "play"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🔍 Explore & Discovery",
+			"item": [
+				{
+					"name": "Get Categories (Cached - May Be Empty)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/explore/categories",
+							"host": ["{{base_url}}"],
+							"path": ["explore", "categories"]
+						}
+					}
+				},
+				{
+					"name": "Get Content List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/explore/list?limit=10&sort=popular&type=story&ageRange=3-5",
+							"host": ["{{base_url}}"],
+							"path": ["explore", "list"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "sort",
+									"value": "popular"
+								},
+								{
+									"key": "type",
+									"value": "story"
+								},
+								{
+									"key": "ageRange",
+									"value": "3-5"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Search Content",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/explore/search?q=sleep&limit=5",
+							"host": ["{{base_url}}"],
+							"path": ["explore", "search"],
+							"query": [
+								{
+									"key": "q",
+									"value": "sleep"
+								},
+								{
+									"key": "limit",
+									"value": "5"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🏠 Home & Personalization",
+			"item": [
+				{
+					"name": "Get Home Content",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/home?kidId=OPTIONAL_KID_ID",
+							"host": ["{{base_url}}"],
+							"path": ["home"],
+							"query": [
+								{
+									"key": "kidId",
+									"value": "OPTIONAL_KID_ID"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "👶 Kids Management",
+			"item": [
+				{
+					"name": "Get User's Kids",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/kids",
+							"host": ["{{base_url}}"],
+							"path": ["kids"]
+						}
+					}
+				},
+				{
+					"name": "Create Kid Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Emma\",\n  \"age\": 5,\n  \"ageRange\": \"3-5\",\n  \"preferences\": {\n    \"favoriteTypes\": [\"story\", \"music\"],\n    \"bedtime\": \"20:00\",\n    \"language\": \"en\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/kids",
+							"host": ["{{base_url}}"],
+							"path": ["kids"]
+						}
+					}
+				},
+				{
+					"name": "Get Kid by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/kids/KID_ID_HERE",
+							"host": ["{{base_url}}"],
+							"path": ["kids", "KID_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Update Kid Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Emma Updated\",\n  \"age\": 6,\n  \"ageRange\": \"6-8\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/kids/KID_ID_HERE",
+							"host": ["{{base_url}}"],
+							"path": ["kids", "KID_ID_HERE"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "❤️ Favorites",
+			"item": [
+				{
+					"name": "Get User Favorites",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/favorites",
+							"host": ["{{base_url}}"],
+							"path": ["favorites"]
+						}
+					}
+				},
+				{
+					"name": "Add to Favorites",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contentId\": \"CONTENT_ID_HERE\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/favorites",
+							"host": ["{{base_url}}"],
+							"path": ["favorites"]
+						}
+					}
+				},
+				{
+					"name": "Remove from Favorites",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/favorites/CONTENT_ID_HERE",
+							"host": ["{{base_url}}"],
+							"path": ["favorites", "CONTENT_ID_HERE"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "💳 Payments & Subscriptions",
+			"item": [
+				{
+					"name": "💰 Payment Management",
+					"item": [
+						{
+							"name": "Get Payment Service Status",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/payment/status",
+									"host": ["{{base_url}}"],
+									"path": ["payment", "status"]
+								}
+							}
+						},
+						{
+							"name": "Get Subscription Plans",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/payment/plans",
+									"host": ["{{base_url}}"],
+									"path": ["payment", "plans"]
+								}
+							}
+						},
+						{
+							"name": "Create Payment Order",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"amount\": 9900,\n  \"currency\": \"INR\",\n  \"orderType\": \"subscription\",\n  \"description\": \"Monthly subscription payment\",\n  \"relatedId\": \"optional_content_or_subscription_id\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/payment/order",
+									"host": ["{{base_url}}"],
+									"path": ["payment", "order"]
+								}
+							}
+						},
+						{
+							"name": "Create Subscription",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"planType\": \"monthly\",\n  \"description\": \"Monthly subscription to Kids Story premium content\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/payment/subscription",
+									"host": ["{{base_url}}"],
+									"path": ["payment", "subscription"]
+								}
+							}
+						},
+						{
+							"name": "Verify Payment",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"razorpay_order_id\": \"order_XXXXXXXXXX\",\n  \"razorpay_payment_id\": \"pay_XXXXXXXXXX\",\n  \"razorpay_signature\": \"signature_hash_here\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/payment/verify",
+									"host": ["{{base_url}}"],
+									"path": ["payment", "verify"]
+								}
+							}
+						},
+						{
+							"name": "Get User Orders",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/payment/orders?page=1&limit=10&status=created",
+									"host": ["{{base_url}}"],
+									"path": ["payment", "orders"],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										},
+										{
+											"key": "status",
+											"value": "created"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Get User Subscriptions",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/payment/subscriptions?page=1&limit=10&status=active&planType=monthly",
+									"host": ["{{base_url}}"],
+									"path": ["payment", "subscriptions"],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										},
+										{
+											"key": "status",
+											"value": "active"
+										},
+										{
+											"key": "planType",
+											"value": "monthly"
+										}
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "📋 Subscription Management",
+					"item": [
+						{
+							"name": "Get Current Subscription",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/subscription",
+									"host": ["{{base_url}}"],
+									"path": ["subscription"]
+								}
+							}
+						},
+						{
+							"name": "Create Checkout Session",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"plan\": \"monthly\",\n  \"successUrl\": \"https://milo.netaapp.in/success\",\n  \"cancelUrl\": \"https://milo.netaapp.in/cancel\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/subscription/checkout",
+									"host": ["{{base_url}}"],
+									"path": ["subscription", "checkout"]
+								}
+							}
+						},
+						{
+							"name": "Cancel Subscription",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"reason\": \"User requested cancellation\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/subscription/cancel",
+									"host": ["{{base_url}}"],
+									"path": ["subscription", "cancel"]
+								}
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "🔧 Admin Panel",
+			"item": [
+				{
+					"name": "📁 Category Management",
+					"item": [
+						{
+							"name": "Get All Categories",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/categories",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "categories"]
+								}
+							}
+						},
+						{
+							"name": "Create Category",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"New Category\",\n  \"description\": \"Description for the new category\",\n  \"slug\": \"new-category\",\n  \"metadata\": {\n    \"color\": \"#FF6B6B\",\n    \"icon\": \"star\"\n  },\n  \"sortOrder\": 5\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/admin/categories",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "categories"]
+								}
+							}
+						},
+						{
+							"name": "Get Category by ID",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/categories/CATEGORY_ID_HERE",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "categories", "CATEGORY_ID_HERE"]
+								}
+							}
+						},
+						{
+							"name": "Update Category",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Updated Category Name\",\n  \"description\": \"Updated description\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/admin/categories/CATEGORY_ID_HERE",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "categories", "CATEGORY_ID_HERE"]
+								}
+							}
+						},
+						{
+							"name": "Delete Category",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/categories/CATEGORY_ID_HERE",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "categories", "CATEGORY_ID_HERE"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "📝 Content Management",
+					"item": [
+						{
+							"name": "Get All Content",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/content?limit=20&offset=0",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "content"],
+									"query": [
+										{
+											"key": "limit",
+											"value": "20"
+										},
+										{
+											"key": "offset",
+											"value": "0"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Create Content",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"categoryId\": \"CATEGORY_ID_HERE\",\n  \"type\": \"story\",\n  \"title\": \"New Bedtime Story\",\n  \"slug\": \"new-bedtime-story\",\n  \"durationSec\": 300,\n  \"ageRange\": \"3-5\",\n  \"tags\": [\"calming\", \"adventure\"],\n  \"audioUrl\": \"https://milo.netaapp.in/uploads/audio/new-story.mp3\",\n  \"imageUrl\": \"https://milo.netaapp.in/uploads/images/new-story.jpg\",\n  \"isFeatured\": false\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/admin/content",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "content"]
+								}
+							}
+						},
+						{
+							"name": "Get Content by ID",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/content/CONTENT_ID_HERE",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "content", "CONTENT_ID_HERE"]
+								}
+							}
+						},
+						{
+							"name": "Update Content",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"title\": \"Updated Story Title\",\n  \"isFeatured\": true,\n  \"popularityScore\": 95\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/admin/content/CONTENT_ID_HERE",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "content", "CONTENT_ID_HERE"]
+								}
+							}
+						},
+						{
+							"name": "Delete Content",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/content/CONTENT_ID_HERE",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "content", "CONTENT_ID_HERE"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "📊 Analytics & Stats",
+					"item": [
+						{
+							"name": "Overview Stats",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/stats/overview",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "stats", "overview"]
+								}
+							}
+						},
+						{
+							"name": "Content Stats",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/stats/content",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "stats", "content"]
+								}
+							}
+						},
+						{
+							"name": "User Stats",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/stats/users",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "stats", "users"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "💳 Subscription Analytics",
+					"item": [
+						{
+							"name": "Get Subscription Statistics",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/subscriptions/stats",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "subscriptions", "stats"]
+								}
+							}
+						},
+						{
+							"name": "Get All Subscriptions (Admin)",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/subscriptions?page=1&limit=20&status=active",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "subscriptions"],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "20"
+										},
+										{
+											"key": "status",
+											"value": "active"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Get All Orders (Admin)",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{access_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/admin/orders?page=1&limit=20&status=paid",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "orders"],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "20"
+										},
+										{
+											"key": "status",
+											"value": "paid"
+										}
+									]
+								}
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "🏥 System Health",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/healthz",
+							"host": ["{{base_url}}"],
+							"path": ["healthz"]
+						}
+					}
+				},
+				{
+					"name": "API Documentation",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://milo.netaapp.in/docs",
+							"protocol": "https",
+							"host": ["milo", "netaapp", "in"],
+							"path": ["docs"]
+						}
+					}
+				}
+			]
+		}
+	]
+}

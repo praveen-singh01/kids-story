@@ -4,6 +4,7 @@ const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = requir
 // const { cache } = require('../loaders/redisLoader');
 const userRepository = require('../repositories/userRepository');
 const logger = require('../utils/logger');
+const { GoogleAuthError, AuthenticationError } = require('../utils/errors');
 
 class AuthService {
   /**
@@ -16,7 +17,7 @@ class AuthService {
       // Check if user already exists
       const existingUser = await userRepository.findByEmail(email);
       if (existingUser) {
-        throw new Error('User already exists with this email');
+        throw new AuthenticationError('User already exists with this email');
       }
 
       // Create new user
@@ -52,7 +53,14 @@ class AuthService {
       };
     } catch (error) {
       logger.error({ error: error.message }, 'User registration failed');
-      throw error;
+
+      // If it's already an AuthenticationError, re-throw it
+      if (error instanceof AuthenticationError) {
+        throw error;
+      }
+
+      // For other errors, wrap in AuthenticationError
+      throw new AuthenticationError('Registration failed');
     }
   }
 
@@ -64,18 +72,18 @@ class AuthService {
       // Find user by email (with methods for authentication)
       const user = await userRepository.findByEmailForAuth(email);
       if (!user) {
-        throw new Error('Invalid email or password');
+        throw new AuthenticationError('Invalid email or password');
       }
 
       // Check if user is local provider
       if (user.provider !== 'local') {
-        throw new Error('Please use Google sign-in for this account');
+        throw new AuthenticationError('Please use Google sign-in for this account');
       }
 
       // Verify password
       const isPasswordValid = await user.comparePassword(password);
       if (!isPasswordValid) {
-        throw new Error('Invalid email or password');
+        throw new AuthenticationError('Invalid email or password');
       }
 
       // Update last login
@@ -99,7 +107,14 @@ class AuthService {
       };
     } catch (error) {
       logger.error({ error: error.message }, 'User login failed');
-      throw error;
+
+      // If it's already an AuthenticationError, re-throw it
+      if (error instanceof AuthenticationError) {
+        throw error;
+      }
+
+      // For other errors, wrap in AuthenticationError
+      throw new AuthenticationError('Login failed');
     }
   }
 
@@ -201,21 +216,21 @@ class AuthService {
     try {
       // Verify Google ID token
       const googleData = await verifyGoogleIdToken(idToken);
-      
+
       // Find or create user
       const user = await userRepository.findOrCreate(googleData);
-      
+
       // Generate JWT tokens
       const accessToken = generateAccessToken(user._id.toString());
       const { token: refreshToken, jti } = generateRefreshToken(user._id.toString());
-      
+
       // TODO: Redis temporarily disabled
       // Store refresh token JTI in cache for revocation tracking
       // const refreshTtlSeconds = this.parseTimeToSeconds('30d');
       // await cache.set(`refresh:${jti}`, user._id.toString(), refreshTtlSeconds);
-      
+
       logger.info({ userId: user._id, email: user.email }, 'User authenticated with Google');
-      
+
       return {
         user: this.sanitizeUser(user),
         accessToken,
@@ -223,7 +238,14 @@ class AuthService {
       };
     } catch (error) {
       logger.error({ error: error.message }, 'Google authentication failed');
-      throw new Error('Authentication failed');
+
+      // If it's already a GoogleAuthError, re-throw it to preserve the 401 status
+      if (error instanceof GoogleAuthError) {
+        throw error;
+      }
+
+      // For other errors, wrap in GoogleAuthError
+      throw new GoogleAuthError('Authentication failed');
     }
   }
 
@@ -234,9 +256,9 @@ class AuthService {
     try {
       // Verify refresh token
       const decoded = verifyRefreshToken(refreshToken);
-      
+
       if (decoded.type !== 'refresh') {
-        throw new Error('Invalid token type');
+        throw new AuthenticationError('Invalid token type');
       }
       
       const { sub: userId, jti } = decoded;
@@ -257,7 +279,7 @@ class AuthService {
       // Get user
       const user = await userRepository.findById(userId);
       if (!user) {
-        throw new Error('User not found');
+        throw new AuthenticationError('User not found');
       }
       
       // Generate new tokens (rotation)
@@ -281,7 +303,14 @@ class AuthService {
       };
     } catch (error) {
       logger.error({ error: error.message }, 'Token refresh failed');
-      throw new Error('Token refresh failed');
+
+      // If it's already an AuthenticationError, re-throw it
+      if (error instanceof AuthenticationError) {
+        throw error;
+      }
+
+      // For other errors, wrap in AuthenticationError
+      throw new AuthenticationError('Token refresh failed');
     }
   }
 

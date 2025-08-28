@@ -20,10 +20,12 @@ class ContentRepository {
    */
   async findWithFilters(filters = {}, options = {}) {
     const {
+      categoryId,
       type,
       ageRange,
       tags,
       isFeatured,
+      isActive,
       language = 'en',
       region = 'US',
     } = filters;
@@ -35,8 +37,16 @@ class ContentRepository {
     } = options;
 
     // Build query
-    const query = { isActive: true, language, region };
-    
+    const query = { language, region };
+
+    // Handle isActive filter (default to true if not specified)
+    if (isActive !== undefined) {
+      query.isActive = isActive;
+    } else {
+      query.isActive = true;
+    }
+
+    if (categoryId) query.categoryId = categoryId;
     if (type) query.type = type;
     if (ageRange) query.ageRange = ageRange;
     if (tags && tags.length > 0) query.tags = { $in: tags };

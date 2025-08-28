@@ -2,29 +2,85 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const subscriptionSchema = new mongoose.Schema({
+  // Current subscription status
+  isActive: {
+    type: Boolean,
+    default: false,
+  },
+
+  // Plan information
+  planType: {
+    type: String,
+    enum: ['free', 'trial', 'monthly', 'yearly'],
+    default: 'free',
+  },
+
+  // Legacy plan field for backward compatibility
   plan: {
     type: String,
     enum: ['free', 'premium', 'family'],
     default: 'free',
   },
+
+  // Subscription status
   status: {
     type: String,
-    enum: ['active', 'inactive', 'cancelled', 'past_due'],
-    default: 'active',
+    enum: ['active', 'inactive', 'cancelled', 'past_due', 'expired'],
+    default: 'inactive',
   },
+
+  // Subscription reference from payment microservice
+  subscriptionId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Subscription',
+    default: null,
+  },
+
+  // Subscription dates
+  startDate: {
+    type: Date,
+    default: null,
+  },
+
+  endDate: {
+    type: Date,
+    default: null,
+  },
+
+  // Legacy field for backward compatibility
   currentPeriodEnd: {
     type: Date,
     default: null,
   },
+
+  // Payment provider information
   provider: {
     type: String,
-    enum: ['stripe', 'apple', 'google'],
-    default: null,
+    enum: ['razorpay', 'stripe', 'apple', 'google'],
+    default: 'razorpay',
   },
+
   providerRef: {
     type: String,
     default: null,
   },
+
+  // Trial information
+  trialUsed: {
+    type: Boolean,
+    default: false,
+  },
+
+  trialStartDate: {
+    type: Date,
+    default: null,
+  },
+
+  trialEndDate: {
+    type: Date,
+    default: null,
+  },
+
   updatedAt: {
     type: Date,
     default: Date.now,
@@ -109,6 +165,9 @@ const userSchema = new mongoose.Schema({
 userSchema.index({ email: 1 });
 userSchema.index({ provider: 1, googleId: 1 });
 userSchema.index({ 'subscription.status': 1 });
+userSchema.index({ 'subscription.isActive': 1 });
+userSchema.index({ 'subscription.planType': 1 });
+userSchema.index({ 'subscription.endDate': 1 });
 userSchema.index({ emailVerificationToken: 1 });
 userSchema.index({ passwordResetToken: 1 });
 

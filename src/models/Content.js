@@ -1,6 +1,12 @@
 const mongoose = require('mongoose');
 
 const contentSchema = new mongoose.Schema({
+  categoryId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category',
+    required: true,
+    index: true,
+  },
   type: {
     type: String,
     enum: ['story', 'affirmation', 'meditation', 'music'],
@@ -53,10 +59,48 @@ const contentSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  videoUrl: {
+    type: String,
+    trim: true,
+  },
   imageUrl: {
     type: String,
     required: true,
     trim: true,
+  },
+  thumbnailUrl: {
+    type: String,
+    trim: true,
+  },
+  mediaMetadata: {
+    audioFormat: {
+      type: String,
+      enum: ['mp3', 'wav', 'aac', 'm4a'],
+    },
+    videoFormat: {
+      type: String,
+      enum: ['mp4', 'webm', 'avi', 'mov'],
+    },
+    thumbnailFormat: {
+      type: String,
+      enum: ['jpg', 'jpeg', 'png', 'webp'],
+    },
+    fileSize: {
+      type: Number,
+      min: 0,
+    },
+    duration: {
+      type: Number,
+      min: 0,
+    },
+    bitrate: {
+      type: Number,
+      min: 0,
+    },
+    resolution: {
+      width: Number,
+      height: Number,
+    },
   },
   isFeatured: {
     type: Boolean,
@@ -92,6 +136,9 @@ const contentSchema = new mongoose.Schema({
 });
 
 // Compound indexes for efficient queries
+contentSchema.index({ categoryId: 1, isActive: 1 });
+contentSchema.index({ categoryId: 1, type: 1, ageRange: 1 });
+contentSchema.index({ categoryId: 1, isFeatured: -1, popularityScore: -1 });
 contentSchema.index({ type: 1, ageRange: 1 });
 contentSchema.index({ type: 1, tags: 1 });
 contentSchema.index({ type: 1, isFeatured: -1, popularityScore: -1 });

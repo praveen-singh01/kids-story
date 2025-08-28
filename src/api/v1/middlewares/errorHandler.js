@@ -1,5 +1,14 @@
 const { error } = require('../../../utils/envelope');
 const logger = require('../../../utils/logger');
+const {
+  AppError,
+  ValidationError,
+  AuthenticationError,
+  AuthorizationError,
+  NotFoundError,
+  ConflictError,
+  GoogleAuthError
+} = require('../../../utils/errors');
 
 /**
  * Global error handler middleware
@@ -35,8 +44,15 @@ function errorHandler(err, req, res, next) {
   let errorCode = 'INTERNAL_ERROR';
   let message = 'An internal error occurred';
 
+  // Custom application errors
+  if (err instanceof AppError) {
+    statusCode = err.statusCode;
+    errorCode = err.code;
+    message = err.message;
+  }
+
   // Validation errors (Zod, Mongoose, etc.)
-  if (err.name === 'ValidationError') {
+  else if (err.name === 'ValidationError') {
     statusCode = 400;
     errorCode = 'VALIDATION_ERROR';
     message = 'Validation failed';

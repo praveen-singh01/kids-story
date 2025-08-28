@@ -28,14 +28,16 @@ function expressLoader(app) {
     crossOriginEmbedderPolicy: false,
   }));
 
-  // CORS configuration
+  // CORS configuration - Allow all origins in development
   app.use(cors({
-    origin: config.corsOrigins,
+    origin: true, // Allow all origins in development
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
     exposedHeaders: ['X-Request-ID'],
   }));
+
+  logger.info('CORS configured to allow all origins in development');
 
   // Compression
   app.use(compression());
