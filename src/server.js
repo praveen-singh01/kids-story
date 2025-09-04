@@ -21,6 +21,7 @@ const exploreRoutes = require('./routes/explore');
 const favoriteRoutes = require('./routes/favorites');
 const progressRoutes = require('./routes/progress');
 const subscriptionRoutes = require('./routes/subscriptions');
+const paymentRoutes = require('./routes/payment');
 const healthRoutes = require('./routes/health');
 
 const app = express();
@@ -80,6 +81,7 @@ app.use(`/api/${API_VERSION}/explore`, exploreRoutes);
 app.use(`/api/${API_VERSION}/favorites`, favoriteRoutes);
 app.use(`/api/${API_VERSION}/progress`, progressRoutes);
 app.use(`/api/${API_VERSION}/subscriptions`, subscriptionRoutes);
+app.use(`/api/${API_VERSION}/payment`, paymentRoutes);
 app.use(`/api/${API_VERSION}/health`, healthRoutes);
 
 // Root endpoint

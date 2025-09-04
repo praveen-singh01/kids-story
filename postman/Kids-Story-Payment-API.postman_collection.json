@@ -1,0 +1,438 @@
+{
+  "info": {
+    "name": "Kids Story Payment API",
+    "description": "Complete API collection for Kids Story payment microservice integration",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Google OAuth Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"GOOGLE_ID_TOKEN_HERE\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/google",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "google"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users/me",
+              "host": ["{{base_url}}"],
+              "path": ["users", "me"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payment Orders",
+      "item": [
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 9900,\n  \"currency\": \"INR\",\n  \"paymentContext\": {\n    \"planType\": \"monthly\",\n    \"description\": \"Kids Story Monthly Plan\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment/order",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "order"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/payment/orders?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "orders"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payment Subscriptions",
+      "item": [
+        {
+          "name": "Create Subscription - Monthly",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"plan_RAeTVEtz6dFtPY\",\n  \"paymentContext\": {\n    \"userType\": \"premium\",\n    \"source\": \"mobile_app\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment/subscription",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "subscription"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Subscription - Yearly",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"plan_RAeTumFCrDrT4X\",\n  \"paymentContext\": {\n    \"userType\": \"premium\",\n    \"source\": \"mobile_app\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment/subscription",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "subscription"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Subscriptions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/payment/subscriptions?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "subscriptions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payment Verification",
+      "item": [
+        {
+          "name": "Verify Payment Success",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"razorpay_order_id\": \"order_razorpay_123\",\n  \"razorpay_payment_id\": \"pay_razorpay_123\",\n  \"razorpay_signature\": \"signature_hash_here\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment/verify-success",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "verify-success"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payment Callbacks",
+      "item": [
+        {
+          "name": "Payment Callback - Order Success",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"orderId\": \"order_123\",\n  \"razorpayOrderId\": \"order_razorpay_123\",\n  \"status\": \"paid\",\n  \"paymentContext\": {\n    \"amount\": 9900,\n    \"currency\": \"INR\",\n    \"planType\": \"monthly\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment/callback",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "callback"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Payment Callback - Subscription Active",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"subscriptionId\": \"sub_123\",\n  \"razorpaySubscriptionId\": \"sub_razorpay_123\",\n  \"status\": \"active\",\n  \"paymentContext\": {\n    \"planId\": \"plan_RAeTVEtz6dFtPY\",\n    \"planType\": \"monthly\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment/callback",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "callback"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Payment Callback - Payment Failed",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"orderId\": \"order_123\",\n  \"status\": \"failed\",\n  \"paymentContext\": {\n    \"reason\": \"insufficient_funds\",\n    \"errorCode\": \"BAD_REQUEST_ERROR\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment/callback",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "callback"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Subscription Management",
+      "item": [
+        {
+          "name": "Get My Subscription",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/subscriptions/me",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Subscription - Monthly (Legacy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"plan_RAeTVEtz6dFtPY\",\n  \"paymentContext\": {\n    \"userType\": \"premium\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/subscriptions",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Subscription - Yearly (Legacy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"plan_RAeTumFCrDrT4X\",\n  \"paymentContext\": {\n    \"userType\": \"premium\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/subscriptions",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update My Subscription",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"plan_RAeTumFCrDrT4X\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/subscriptions/me",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel My Subscription",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/subscriptions/me/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "me", "cancel"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Subscription Plans",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/subscriptions/plans",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "plans"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health & Utility",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "API Root",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/../../",
+              "host": ["{{base_url}}"],
+              "path": ["../../"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

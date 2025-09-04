@@ -1,208 +1,147 @@
 const axios = require('axios');
+const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const logger = require('../config/logger');
 
 /**
- * Payment Service - Interface for external payment microservice
- * This service handles communication with the external payment processing system
+ * Payment Microservice Client - Interface for Kids Story payment microservice integration
+ * This service handles communication with the payment microservice following the integration guide
  */
-class PaymentService {
+class PaymentServiceClient {
   constructor() {
-    this.paymentServiceUrl = process.env.PAYMENT_SERVICE_URL || 'http://localhost:3001';
-    this.paymentServiceApiKey = process.env.PAYMENT_SERVICE_API_KEY;
-    
-    // Configure axios instance for payment service
-    this.paymentClient = axios.create({
-      baseURL: this.paymentServiceUrl,
-      timeout: 30000,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.paymentServiceApiKey}`,
-        'X-Service': 'kids-story-api'
-      }
-    });
+    this.baseUrl = process.env.PAYMENT_MICROSERVICE_URL;
+    this.packageId = process.env.PAYMENT_PACKAGE_ID;
+    this.jwtSecret = process.env.PAYMENT_JWT_SECRET;
 
-    // Add request/response interceptors for logging
-    this.paymentClient.interceptors.request.use(
-      (config) => {
-        logger.info('Payment service request:', {
-          method: config.method,
-          url: config.url,
-          data: config.data ? 'present' : 'none'
-        });
-        return config;
-      },
-      (error) => {
-        logger.error('Payment service request error:', error);
-        return Promise.reject(error);
-      }
-    );
+    if (!this.baseUrl || !this.packageId || !this.jwtSecret) {
+      logger.error('Payment microservice configuration missing:', {
+        baseUrl: !!this.baseUrl,
+        packageId: !!this.packageId,
+        jwtSecret: !!this.jwtSecret
+      });
+      throw new Error('Payment microservice configuration is incomplete');
+    }
+  }
 
-    this.paymentClient.interceptors.response.use(
-      (response) => {
-        logger.info('Payment service response:', {
-          status: response.status,
-          url: response.config.url
-        });
-        return response;
-      },
-      (error) => {
-        logger.error('Payment service response error:', {
-          status: error.response?.status,
-          message: error.message,
-          url: error.config?.url
-        });
-        return Promise.reject(error);
-      }
-    );
+  /**
+   * Generate JWT token for API calls
+   */
+  generateToken(userId) {
+    const payload = {
+      userId: userId,
+      appId: this.packageId,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hour expiry
+    };
+    return jwt.sign(payload, this.jwtSecret);
+  }
+
+  /**
+   * Get headers for API requests
+   */
+  getHeaders(userId) {
+    return {
+      'Authorization': `Bearer ${this.generateToken(userId)}`,
+      'x-app-id': this.packageId,
+      'Content-Type': 'application/json'
+    };
+  }
+
+  /**
+   * Create an order for one-time payment
+   */
+  async createOrder(userId, amount, currency = 'INR', paymentContext = {}) {
+    try {
+      const response = await axios.post(`${this.baseUrl}/api/payment/order`, {
+        userId,
+        amount, // Amount in paise
+        currency,
+        paymentContext
+      }, {
+        headers: this.getHeaders(userId)
+      });
+
+      logger.info(`Order created for user ${userId}: ${response.data.orderId}`);
+      return response.data;
+    } catch (error) {
+      logger.error('Order creation failed:', error.response?.data || error.message);
+      throw error;
+    }
   }
 
   /**
    * Create a subscription for a user
    */
-  async createSubscription(userId, planId, paymentMethodId) {
+  async createSubscription(userId, planId, paymentContext = {}) {
     try {
-      const user = await User.findById(userId);
-      if (!user) {
-        throw new Error('User not found');
-      }
-
-      const response = await this.paymentClient.post('/subscriptions', {
+      const response = await axios.post(`${this.baseUrl}/api/payment/subscription`, {
         userId,
-        userEmail: user.email,
         planId,
-        paymentMethodId,
-        metadata: {
-          service: 'kids-story-app',
-          userProvider: user.provider
-        }
+        paymentContext
+      }, {
+        headers: this.getHeaders(userId)
       });
 
-      const subscription = response.data;
-
-      // Update user subscription in our database
-      await this.updateUserSubscription(userId, {
-        plan: subscription.planId,
-        status: subscription.status,
-        currentPeriodEnd: new Date(subscription.currentPeriodEnd),
-        provider: 'stripe',
-        providerRef: subscription.id
-      });
-
-      logger.info(`Subscription created for user ${userId}: ${subscription.id}`);
-
-      return subscription;
-    } catch (error) {
-      logger.error('Create subscription error:', error);
-      throw new Error('Failed to create subscription');
-    }
-  }
-
-  /**
-   * Cancel a subscription
-   */
-  async cancelSubscription(userId) {
-    try {
-      const user = await User.findById(userId);
-      if (!user || !user.subscription?.providerRef) {
-        throw new Error('No active subscription found');
-      }
-
-      const response = await this.paymentClient.post(`/subscriptions/${user.subscription.providerRef}/cancel`);
-      const subscription = response.data;
-
-      // Update user subscription status
-      await this.updateUserSubscription(userId, {
-        status: 'cancelled',
-        currentPeriodEnd: new Date(subscription.currentPeriodEnd)
-      });
-
-      logger.info(`Subscription cancelled for user ${userId}: ${subscription.id}`);
-
-      return subscription;
-    } catch (error) {
-      logger.error('Cancel subscription error:', error);
-      throw new Error('Failed to cancel subscription');
-    }
-  }
-
-  /**
-   * Update subscription (change plan, payment method, etc.)
-   */
-  async updateSubscription(userId, updates) {
-    try {
-      const user = await User.findById(userId);
-      if (!user || !user.subscription?.providerRef) {
-        throw new Error('No active subscription found');
-      }
-
-      const response = await this.paymentClient.patch(`/subscriptions/${user.subscription.providerRef}`, updates);
-      const subscription = response.data;
-
-      // Update user subscription in our database
-      await this.updateUserSubscription(userId, {
-        plan: subscription.planId,
-        status: subscription.status,
-        currentPeriodEnd: new Date(subscription.currentPeriodEnd)
-      });
-
-      logger.info(`Subscription updated for user ${userId}: ${subscription.id}`);
-
-      return subscription;
-    } catch (error) {
-      logger.error('Update subscription error:', error);
-      throw new Error('Failed to update subscription');
-    }
-  }
-
-  /**
-   * Get subscription details from payment service
-   */
-  async getSubscription(userId) {
-    try {
-      const user = await User.findById(userId);
-      if (!user || !user.subscription?.providerRef) {
-        return null;
-      }
-
-      const response = await this.paymentClient.get(`/subscriptions/${user.subscription.providerRef}`);
+      logger.info(`Subscription created for user ${userId}: ${response.data.subscriptionId}`);
       return response.data;
     } catch (error) {
-      logger.error('Get subscription error:', error);
-      return null;
+      logger.error('Subscription creation failed:', error.response?.data || error.message);
+      throw error;
     }
   }
 
   /**
-   * Handle webhook from payment service
+   * Get user orders
    */
-  async handleWebhook(event) {
+  async getUserOrders(userId, page = 1, limit = 10) {
     try {
-      logger.info('Processing payment webhook:', { type: event.type, id: event.id });
+      const response = await axios.get(`${this.baseUrl}/api/payment/orders`, {
+        params: { page, limit },
+        headers: this.getHeaders(userId)
+      });
 
-      switch (event.type) {
-        case 'subscription.created':
-          await this.handleSubscriptionCreated(event.data);
-          break;
-        case 'subscription.updated':
-          await this.handleSubscriptionUpdated(event.data);
-          break;
-        case 'subscription.cancelled':
-          await this.handleSubscriptionCancelled(event.data);
-          break;
-        case 'payment.succeeded':
-          await this.handlePaymentSucceeded(event.data);
-          break;
-        case 'payment.failed':
-          await this.handlePaymentFailed(event.data);
-          break;
-        default:
-          logger.warn('Unhandled webhook event type:', event.type);
-      }
-
-      return { processed: true };
+      logger.info(`Retrieved orders for user ${userId}`);
+      return response.data;
     } catch (error) {
-      logger.error('Webhook processing error:', error);
+      logger.error('Get orders failed:', error.response?.data || error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Get user subscriptions
+   */
+  async getUserSubscriptions(userId, page = 1, limit = 10) {
+    try {
+      const response = await axios.get(`${this.baseUrl}/api/payment/subscriptions`, {
+        params: { page, limit },
+        headers: this.getHeaders(userId)
+      });
+
+      logger.info(`Retrieved subscriptions for user ${userId}`);
+      return response.data;
+    } catch (error) {
+      logger.error('Get subscriptions failed:', error.response?.data || error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Verify payment success
+   */
+  async verifyPayment(userId, verificationData) {
+    try {
+      const response = await axios.post(`${this.baseUrl}/api/payment/verify-success`,
+        verificationData,
+        {
+          headers: this.getHeaders(userId)
+        }
+      );
+
+      logger.info(`Payment verification completed for user ${userId}`);
+      return response.data;
+    } catch (error) {
+      logger.error('Payment verification failed:', error.response?.data || error.message);
       throw error;
     }
   }
@@ -223,6 +162,7 @@ class PaymentService {
       };
 
       await user.save();
+      logger.info(`User subscription updated for user ${userId}`);
       return user;
     } catch (error) {
       logger.error('Update user subscription error:', error);
@@ -230,57 +170,20 @@ class PaymentService {
     }
   }
 
-  // Webhook event handlers
-  async handleSubscriptionCreated(subscription) {
-    // Find user by provider reference or email
-    const user = await User.findOne({
-      $or: [
-        { 'subscription.providerRef': subscription.id },
-        { email: subscription.customerEmail }
-      ]
-    });
-
-    if (user) {
-      await this.updateUserSubscription(user._id, {
-        plan: subscription.planId,
-        status: subscription.status,
-        currentPeriodEnd: new Date(subscription.currentPeriodEnd),
-        provider: 'stripe',
-        providerRef: subscription.id
-      });
+  /**
+   * Update order status in our database
+   */
+  async updateOrderStatus(orderId, status) {
+    try {
+      // This would typically update an Order model if you have one
+      // For now, just log the status update
+      logger.info(`Order ${orderId} status updated to: ${status}`);
+      return { orderId, status };
+    } catch (error) {
+      logger.error('Update order status error:', error);
+      throw error;
     }
-  }
-
-  async handleSubscriptionUpdated(subscription) {
-    const user = await User.findOne({ 'subscription.providerRef': subscription.id });
-    if (user) {
-      await this.updateUserSubscription(user._id, {
-        plan: subscription.planId,
-        status: subscription.status,
-        currentPeriodEnd: new Date(subscription.currentPeriodEnd)
-      });
-    }
-  }
-
-  async handleSubscriptionCancelled(subscription) {
-    const user = await User.findOne({ 'subscription.providerRef': subscription.id });
-    if (user) {
-      await this.updateUserSubscription(user._id, {
-        status: 'cancelled',
-        currentPeriodEnd: new Date(subscription.currentPeriodEnd)
-      });
-    }
-  }
-
-  async handlePaymentSucceeded(payment) {
-    logger.info('Payment succeeded:', { subscriptionId: payment.subscriptionId, amount: payment.amount });
-    // Could trigger email notifications, analytics events, etc.
-  }
-
-  async handlePaymentFailed(payment) {
-    logger.warn('Payment failed:', { subscriptionId: payment.subscriptionId, reason: payment.failureReason });
-    // Could trigger retry logic, email notifications, etc.
   }
 }
 
-module.exports = new PaymentService();
+module.exports = new PaymentServiceClient();

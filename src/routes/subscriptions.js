@@ -21,48 +21,65 @@ const handleValidationErrors = (req, res, next) => {
 const validateSubscriptionCreation = [
   body('planId')
     .notEmpty()
-    .isIn(['premium-monthly', 'premium-yearly'])
-    .withMessage('Plan ID must be premium-monthly or premium-yearly'),
-  body('paymentMethodId')
-    .notEmpty()
-    .isString()
-    .withMessage('Payment method ID is required')
+    .isIn(['plan_kids_story_trial', 'plan_kids_story_monthly', 'plan_kids_story_yearly'])
+    .withMessage('Plan ID must be plan_kids_story_trial, plan_kids_story_monthly, or plan_kids_story_yearly'),
+  body('paymentContext')
+    .optional()
+    .isObject()
+    .withMessage('Payment context must be an object')
 ];
 
 const validateSubscriptionUpdate = [
   body('planId')
     .optional()
-    .isIn(['premium-monthly', 'premium-yearly'])
-    .withMessage('Plan ID must be premium-monthly or premium-yearly')
+    .isIn(['plan_kids_story_trial', 'plan_kids_story_monthly', 'plan_kids_story_yearly'])
+    .withMessage('Plan ID must be plan_kids_story_trial, plan_kids_story_monthly, or plan_kids_story_yearly')
 ];
 
 // GET /subscriptions/me - Get current user's subscription
 router.get('/me', authenticate, async (req, res) => {
   try {
     const user = req.user;
-    
-    // Get subscription details from payment service
-    const paymentSubscription = await paymentService.getSubscription(user._id);
-    
-    const subscriptionData = {
-      plan: user.subscription?.plan || 'free',
-      status: user.subscription?.status || 'active',
-      currentPeriodEnd: user.subscription?.currentPeriodEnd,
-      provider: user.subscription?.provider,
-      providerRef: user.subscription?.providerRef,
-      // Include payment service data if available
-      ...(paymentSubscription && {
-        paymentDetails: {
-          nextBillingDate: paymentSubscription.nextBillingDate,
-          amount: paymentSubscription.amount,
-          currency: paymentSubscription.currency,
-          paymentMethod: paymentSubscription.paymentMethod
-        }
-      })
-    };
+    const userId = req.userId;
 
-    res.success(subscriptionData, 'Subscription details retrieved successfully');
-    
+    // Get subscription details from payment microservice
+    try {
+      const paymentSubscriptions = await paymentService.getUserSubscriptions(userId, 1, 1);
+      const activeSubscription = paymentSubscriptions.subscriptions?.find(sub => sub.status === 'active');
+
+      const subscriptionData = {
+        plan: user.subscription?.plan || 'free',
+        status: user.subscription?.status || 'inactive',
+        currentPeriodEnd: user.subscription?.currentPeriodEnd,
+        provider: user.subscription?.provider,
+        providerRef: user.subscription?.providerRef,
+        // Include payment service data if available
+        ...(activeSubscription && {
+          paymentDetails: {
+            subscriptionId: activeSubscription.subscriptionId,
+            planId: activeSubscription.planId,
+            status: activeSubscription.status,
+            razorpaySubscriptionId: activeSubscription.razorpaySubscriptionId
+          }
+        })
+      };
+
+      res.success(subscriptionData, 'Subscription details retrieved successfully');
+    } catch (paymentError) {
+      // If payment service is unavailable, return local subscription data
+      logger.warn('Payment service unavailable, returning local subscription data:', paymentError.message);
+
+      const subscriptionData = {
+        plan: user.subscription?.plan || 'free',
+        status: user.subscription?.status || 'inactive',
+        currentPeriodEnd: user.subscription?.currentPeriodEnd,
+        provider: user.subscription?.provider,
+        providerRef: user.subscription?.providerRef
+      };
+
+      res.success(subscriptionData, 'Subscription details retrieved successfully (local data)');
+    }
+
   } catch (error) {
     logger.error('Get subscription error:', error);
     res.status(500).error(['Failed to retrieve subscription details'], 'Internal server error');
@@ -72,7 +89,7 @@ router.get('/me', authenticate, async (req, res) => {
 // POST /subscriptions - Create a new subscription
 router.post('/', authenticate, validateSubscriptionCreation, handleValidationErrors, async (req, res) => {
   try {
-    const { planId, paymentMethodId } = req.body;
+    const { planId, paymentContext = {} } = req.body;
     const userId = req.userId;
 
     // Check if user already has an active subscription
@@ -81,26 +98,26 @@ router.post('/', authenticate, validateSubscriptionCreation, handleValidationErr
       return res.status(409).error(['User already has an active subscription'], 'Subscription creation failed');
     }
 
-    // Create subscription via payment service
-    const subscription = await paymentService.createSubscription(userId, planId, paymentMethodId);
+    // Create subscription via payment microservice
+    const subscription = await paymentService.createSubscription(userId, planId, paymentContext);
 
-    logger.info(`Subscription created for user ${userId}: ${subscription.id}`);
+    logger.info(`Subscription created for user ${userId}: ${subscription.subscriptionId}`);
 
     res.status(201).success({
-      subscriptionId: subscription.id,
-      plan: subscription.planId,
+      subscriptionId: subscription.subscriptionId,
+      planId: subscription.planId,
       status: subscription.status,
-      currentPeriodEnd: subscription.currentPeriodEnd,
-      nextBillingDate: subscription.nextBillingDate
+      razorpaySubscriptionId: subscription.razorpaySubscriptionId,
+      shortUrl: subscription.shortUrl
     }, 'Subscription created successfully');
-    
+
   } catch (error) {
     logger.error('Create subscription error:', error);
-    
-    if (error.message === 'User not found') {
-      return res.status(404).error([error.message], 'Subscription creation failed');
+
+    if (error.response?.status === 400) {
+      return res.status(400).error([error.response.data.message || 'Invalid subscription data'], 'Subscription creation failed');
     }
-    
+
     res.status(500).error(['Failed to create subscription'], 'Internal server error');
   }
 });
@@ -109,27 +126,18 @@ router.post('/', authenticate, validateSubscriptionCreation, handleValidationErr
 router.patch('/me', authenticate, validateSubscriptionUpdate, handleValidationErrors, async (req, res) => {
   try {
     const userId = req.userId;
-    const updates = req.body;
+    const { planId } = req.body;
 
-    const subscription = await paymentService.updateSubscription(userId, updates);
-
-    logger.info(`Subscription updated for user ${userId}: ${subscription.id}`);
+    // For the microservice integration, updating subscription means creating a new one
+    // This would typically be handled by the payment microservice
+    logger.info(`Subscription update requested for user ${userId} to plan ${planId}`);
 
     res.success({
-      subscriptionId: subscription.id,
-      plan: subscription.planId,
-      status: subscription.status,
-      currentPeriodEnd: subscription.currentPeriodEnd,
-      nextBillingDate: subscription.nextBillingDate
-    }, 'Subscription updated successfully');
-    
+      message: 'Subscription update initiated. Please use the payment endpoints to create a new subscription.'
+    }, 'Subscription update request received');
+
   } catch (error) {
     logger.error('Update subscription error:', error);
-    
-    if (error.message === 'No active subscription found') {
-      return res.status(404).error([error.message], 'Subscription update failed');
-    }
-    
     res.status(500).error(['Failed to update subscription'], 'Internal server error');
   }
 });
@@ -138,25 +146,28 @@ router.patch('/me', authenticate, validateSubscriptionUpdate, handleValidationEr
 router.post('/me/cancel', authenticate, async (req, res) => {
   try {
     const userId = req.userId;
+    const user = await User.findById(userId);
 
-    const subscription = await paymentService.cancelSubscription(userId);
+    if (!user.subscription || user.subscription.status !== 'active') {
+      return res.status(404).error(['No active subscription found'], 'Subscription cancellation failed');
+    }
 
-    logger.info(`Subscription cancelled for user ${userId}: ${subscription.id}`);
+    // Update local subscription status to cancelled
+    await paymentService.updateUserSubscription(userId, {
+      status: 'cancelled',
+      cancelledAt: new Date()
+    });
+
+    logger.info(`Subscription cancelled for user ${userId}`);
 
     res.success({
-      subscriptionId: subscription.id,
-      status: subscription.status,
-      currentPeriodEnd: subscription.currentPeriodEnd,
-      cancelledAt: subscription.cancelledAt
+      status: 'cancelled',
+      cancelledAt: new Date(),
+      message: 'Subscription has been cancelled. Access will continue until the current period ends.'
     }, 'Subscription cancelled successfully');
-    
+
   } catch (error) {
     logger.error('Cancel subscription error:', error);
-    
-    if (error.message === 'No active subscription found') {
-      return res.status(404).error([error.message], 'Subscription cancellation failed');
-    }
-    
     res.status(500).error(['Failed to cancel subscription'], 'Internal server error');
   }
 });
@@ -164,13 +175,13 @@ router.post('/me/cancel', authenticate, async (req, res) => {
 // GET /subscriptions/plans - Get available subscription plans
 router.get('/plans', async (req, res) => {
   try {
-    // In a real app, this might come from the payment service or be configured
+    // Updated plans to match the payment microservice configuration
     const plans = [
       {
         id: 'free',
         name: 'Free Plan',
         price: 0,
-        currency: 'USD',
+        currency: 'INR',
         interval: 'month',
         features: [
           'Access to basic stories',
@@ -179,10 +190,24 @@ router.get('/plans', async (req, res) => {
         ]
       },
       {
-        id: 'premium-monthly',
-        name: 'Premium Monthly',
-        price: 9.99,
-        currency: 'USD',
+        id: 'plan_kids_story_trial',
+        name: 'Trial Plan',
+        price: 1,
+        currency: 'INR',
+        interval: 'week',
+        billingCycle: '7 days',
+        features: [
+          'Access to all stories',
+          'Full content library',
+          'High-quality audio',
+          '7-day trial period'
+        ]
+      },
+      {
+        id: 'plan_kids_story_monthly',
+        name: 'Monthly Plan',
+        price: 99,
+        currency: 'INR',
         interval: 'month',
         features: [
           'Access to all stories',
@@ -194,10 +219,10 @@ router.get('/plans', async (req, res) => {
         ]
       },
       {
-        id: 'premium-yearly',
-        name: 'Premium Yearly',
-        price: 99.99,
-        currency: 'USD',
+        id: 'plan_kids_story_yearly',
+        name: 'Yearly Plan',
+        price: 499,
+        currency: 'INR',
         interval: 'year',
         features: [
           'Access to all stories',
@@ -206,38 +231,17 @@ router.get('/plans', async (req, res) => {
           'Offline downloads',
           'Ad-free experience',
           'New content weekly',
-          '2 months free'
+          'Best value - Save 58%'
         ],
-        savings: '17% off monthly price'
+        savings: '58% off monthly price'
       }
     ];
 
     res.success(plans, 'Subscription plans retrieved successfully');
-    
+
   } catch (error) {
     logger.error('Get plans error:', error);
     res.status(500).error(['Failed to retrieve subscription plans'], 'Internal server error');
-  }
-});
-
-// POST /subscriptions/webhooks - Handle payment service webhooks
-router.post('/webhooks', async (req, res) => {
-  try {
-    const event = req.body;
-    
-    // Verify webhook signature (implementation depends on payment service)
-    // const signature = req.headers['x-payment-signature'];
-    // if (!verifyWebhookSignature(event, signature)) {
-    //   return res.status(401).error(['Invalid webhook signature'], 'Unauthorized');
-    // }
-
-    await paymentService.handleWebhook(event);
-
-    res.success({ received: true }, 'Webhook processed successfully');
-    
-  } catch (error) {
-    logger.error('Webhook processing error:', error);
-    res.status(500).error(['Failed to process webhook'], 'Internal server error');
   }
 });
 
