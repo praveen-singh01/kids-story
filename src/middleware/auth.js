@@ -1,101 +1,135 @@
-const JWTUtils = require('../utils/jwt');
+const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const logger = require('../config/logger');
 
-const authenticate = async (req, res, next) => {
+// Protect routes - require authentication
+const protect = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).error(['Access token is required'], 'Authentication required');
+    let token;
+
+    // Check for token in Authorization header
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    
+    // Check if token exists
     if (!token) {
-      return res.status(401).error(['Access token is required'], 'Authentication required');
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. No token provided.'
+      });
     }
 
-    // Verify the token
-    const decoded = JWTUtils.verifyAccessToken(token);
-    
-    // Find the user
-    const user = await User.findById(decoded.userId);
-    
-    if (!user || !user.isActive) {
-      return res.status(401).error(['User not found or inactive'], 'Authentication failed');
-    }
+    try {
+      // Verify token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Attach user to request
-    req.user = user;
-    req.userId = user._id.toString();
-    
-    next();
+      // Get user from token
+      let user = await User.findOne({ _id: decoded.userId });
+
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Token is not valid. User not found.'
+        });
+      }
+
+      if (!user.isActive) {
+        return res.status(401).json({
+          success: false,
+          message: 'Account is deactivated.'
+        });
+      }
+
+      req.user = user;
+      req.userId = user._id.toString();
+      next();
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: 'Token is not valid.'
+      });
+    }
   } catch (error) {
-    logger.error('Authentication error:', error);
-    
-    if (error.message === 'Invalid access token' || error.name === 'JsonWebTokenError') {
-      return res.status(401).error(['Invalid access token'], 'Authentication failed');
-    }
-    
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).error(['Access token expired'], 'Token expired');
-    }
-    
-    return res.status(500).error(['Authentication service error'], 'Internal server error');
+    logger.error('Auth middleware error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error in authentication'
+    });
   }
 };
 
+// Optional authentication - doesn't require token but sets user if present
+const optionalAuth = async (req, res, next) => {
+  try {
+    let token;
+
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        let user = await User.findOne({ _id: decoded.userId });
+
+        if (user && user.isActive) {
+          req.user = user;
+          req.userId = user._id.toString();
+        }
+      } catch (error) {
+        // Invalid token, but continue without user
+        logger.warn('Invalid token in optional auth:', error.message);
+      }
+    }
+
+    next();
+  } catch (error) {
+    logger.error('Optional auth middleware error:', error);
+    next();
+  }
+};
+
+// Authorize specific roles
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).error(['Authentication required'], 'Access denied');
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. Authentication required.'
+      });
     }
 
     const userRoles = req.user.roles || [];
     const hasRole = roles.some(role => userRoles.includes(role));
 
     if (!hasRole) {
-      return res.status(403).error(['Insufficient permissions'], 'Access denied');
+      return res.status(403).json({
+        success: false,
+        message: `Access denied. Role '${req.user.roles}' is not authorized.`
+      });
     }
 
     next();
   };
 };
 
-const optionalAuth = async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return next(); // Continue without authentication
-    }
-
-    const token = authHeader.substring(7);
-    
-    if (!token) {
-      return next(); // Continue without authentication
-    }
-
-    // Try to verify the token
-    const decoded = JWTUtils.verifyAccessToken(token);
-    const user = await User.findById(decoded.userId);
-    
-    if (user && user.isActive) {
-      req.user = user;
-      req.userId = user._id.toString();
-    }
-    
-    next();
-  } catch (error) {
-    // Log the error but continue without authentication
-    logger.warn('Optional authentication failed:', error.message);
-    next();
-  }
+// Generate JWT token
+const generateToken = (id) => {
+  return jwt.sign({ userId: id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN || '24h',
+    issuer: 'kids-story-api',
+    audience: 'kids-story-app'
+  });
 };
 
+// Legacy aliases for backward compatibility
+const authenticate = protect;
+
 module.exports = {
+  protect,
   authenticate,
+  optionalAuth,
   authorize,
-  optionalAuth
+  generateToken
 };

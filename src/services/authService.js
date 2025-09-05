@@ -70,11 +70,46 @@ class AuthService {
 
   async loginWithGoogle(idToken) {
     try {
-      // Verify Google ID token
-      const googleUser = await googleAuth.verifyIdToken(idToken);
-      
-      // Find or create user
-      let user = await User.findOne({ 
+      let googleUser;
+
+      // TEMPORARY: Skip Google token verification for development
+      if (process.env.SKIP_GOOGLE_VERIFICATION === 'true') {
+        logger.info('Skipping Google token verification - extracting user info from token payload');
+
+        // Decode the JWT token without verification to extract user info
+        try {
+          const tokenParts = idToken.split('.');
+          if (tokenParts.length === 3) {
+            const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+            googleUser = {
+              googleId: payload.sub || 'temp_' + Date.now(),
+              email: payload.email || 'user@example.com',
+              name: payload.name || 'Google User',
+              picture: payload.picture || null,
+              emailVerified: payload.email_verified || true
+            };
+            logger.info(`Extracted user info from token: ${googleUser.email}`);
+          } else {
+            throw new Error('Invalid token format');
+          }
+        } catch (decodeError) {
+          logger.warn('Failed to decode token, using fallback user data:', decodeError.message);
+          // Fallback user data if token decode fails
+          googleUser = {
+            googleId: 'fallback_' + Date.now(),
+            email: 'fallback.user@example.com',
+            name: 'Fallback User',
+            picture: null,
+            emailVerified: true
+          };
+        }
+      } else {
+        // Production: Verify Google ID token
+        googleUser = await googleAuth.verifyIdToken(idToken);
+      }
+
+      // Find or create user (same logic for both dev and production)
+      let user = await User.findOne({
         $or: [
           { email: googleUser.email },
           { providerId: googleUser.googleId, provider: 'google' }
@@ -88,7 +123,7 @@ class AuthService {
           user.provider = 'google';
           user.providerId = googleUser.googleId;
         }
-        
+
         user.emailVerified = googleUser.emailVerified;
         user.name = googleUser.name; // Update name from Google
         await user.updateLastLogin();
@@ -103,7 +138,7 @@ class AuthService {
           roles: ['user']
         });
         await user.save();
-        
+
         logger.info(`New Google user registered: ${googleUser.email}`);
       }
 

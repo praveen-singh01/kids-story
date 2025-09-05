@@ -1,6 +1,6 @@
-# Kids Story Payment API - Postman Collection
+# Kids Story Complete API - Postman Collection
 
-This directory contains comprehensive Postman collections and environments for testing the Kids Story Payment API integration.
+This directory contains comprehensive Postman collections and environments for testing the complete Kids Story API, including all endpoints for authentication, content management, user profiles, payment integration, and more.
 
 ## 📁 Files Included
 
@@ -39,8 +39,50 @@ This directory contains comprehensive Postman collections and environments for t
 ## 📋 API Endpoints Overview
 
 ### 🔐 Authentication
+- `POST /auth/register` - Register with email/password
+- `POST /auth/login` - Login with email/password
 - `POST /auth/google` - Google OAuth login
-- `GET /users/me` - Get current user details
+- `POST /auth/refresh` - Refresh access token
+
+### 👤 User Management
+- `GET /users/me` - Get current user profile
+- `PATCH /users/me` - Update user profile
+- `DELETE /users/me` - Delete user account
+
+### 👶 Kid Profiles
+- `GET /kids` - List kid profiles
+- `POST /kids` - Create kid profile
+- `GET /kids/:id` - Get specific kid profile
+- `PATCH /kids/:id` - Update kid profile
+- `DELETE /kids/:id` - Delete kid profile
+
+### 📚 Content Management
+- `GET /content` - List content with filtering
+- `GET /content/search` - Search content
+- `GET /content/featured` - Get featured content
+- `GET /content/:slug` - Get content by slug
+- `GET /content/type/:type` - Get content by type
+
+### 🎭 Avatars
+- `GET /avatars` - Get available avatars
+
+### 🔍 Explore
+- `GET /explore/categories` - Get browse categories
+- `GET /explore/continue` - Get continue playing items
+- `GET /explore/collections` - Get featured collections
+- `GET /explore/collections/:id` - Get collection content
+
+### ❤️ Favorites
+- `GET /favorites` - Get user's favorites
+- `POST /favorites` - Add to favorites
+- `DELETE /favorites/:id` - Remove from favorites
+- `GET /favorites/check/:contentId` - Check favorite status
+
+### 📊 Progress Tracking
+- `POST /progress` - Update progress
+- `GET /progress/:contentId` - Get content progress
+- `GET /progress` - Get all progress
+- `DELETE /progress/:contentId` - Reset progress
 
 ### 💳 Payment Orders
 - `POST /payment/order` - Create a new payment order
@@ -65,14 +107,19 @@ This directory contains comprehensive Postman collections and environments for t
 
 ### 🏥 Health & Utility
 - `GET /health` - API health check
+- `GET /health/detailed` - Detailed health check
 - `GET /` - API root endpoint
 
 ## 🔧 Environment Variables
 
 ### Development Environment
-- `base_url`: `http://localhost:3000/api/v1`
+- `base_url`: `http://localhost:5000/api/v1`
 - `auth_token`: Your JWT access token
 - `user_id`: Current user's ID
+- `kid_id`: Kid profile ID for testing
+- `content_id`: Content ID for testing
+- `favorite_id`: Favorite ID for testing
+- `content_slug`: Content slug for testing
 - `razorpay_monthly_plan`: `plan_RAeTVEtz6dFtPY`
 - `razorpay_yearly_plan`: `plan_RAeTumFCrDrT4X`
 
@@ -84,12 +131,29 @@ This directory contains comprehensive Postman collections and environments for t
 
 ### 1. Authentication Flow
 ```
-1. Google OAuth Login → Get access token
+1. Register/Login → Get access token
 2. Get Current User → Get user ID
 3. Set both in environment variables
 ```
 
-### 2. Order Creation Flow
+### 2. Content Discovery Flow
+```
+1. Get Featured Content → Browse featured items
+2. Search Content → Find specific content
+3. Get Content by Slug → View detailed content
+4. Add to Favorites → Save liked content
+5. Update Progress → Track listening progress
+```
+
+### 3. Kid Profile Management Flow
+```
+1. Get Available Avatars → Choose avatar
+2. Create Kid Profile → Set up child profile
+3. List Kid Profiles → View all profiles
+4. Update Kid Profile → Modify profile details
+```
+
+### 4. Order Creation Flow
 ```
 1. Create Order → Get order ID and Razorpay order ID
 2. [Frontend handles Razorpay payment]
@@ -97,7 +161,7 @@ This directory contains comprehensive Postman collections and environments for t
 4. Get User Orders → View order history
 ```
 
-### 3. Subscription Flow
+### 5. Subscription Flow
 ```
 1. Get Subscription Plans → View available plans
 2. Create Subscription → Get subscription ID and payment URL
@@ -107,6 +171,42 @@ This directory contains comprehensive Postman collections and environments for t
 ```
 
 ## 🎯 Sample Request Bodies
+
+### User Registration
+```json
+{
+  "email": "test@example.com",
+  "password": "password123",
+  "name": "Test User"
+}
+```
+
+### Create Kid Profile
+```json
+{
+  "name": "Emma",
+  "ageRange": "6-8",
+  "avatarKey": "avatar_girl_1"
+}
+```
+
+### Add to Favorites
+```json
+{
+  "contentId": "content_123",
+  "contentType": "story"
+}
+```
+
+### Update Progress
+```json
+{
+  "contentId": "content_123",
+  "progress": 120,
+  "total": 300,
+  "completed": false
+}
+```
 
 ### Create Order
 ```json

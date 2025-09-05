@@ -18,7 +18,7 @@
   "variable": [
     {
       "key": "base_url",
-      "value": "http://localhost:3000/api/v1",
+      "value": "http://localhost:5000/api/v1",
       "type": "string"
     },
     {
@@ -30,12 +30,66 @@
       "key": "user_id",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "kid_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "content_id",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
     {
       "name": "Authentication",
       "item": [
+        {
+          "name": "Register with Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login with Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
         {
           "name": "Google OAuth Login",
           "request": {
@@ -48,7 +102,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"token\": \"GOOGLE_ID_TOKEN_HERE\"\n}"
+              "raw": "{\n  \"idToken\": \"GOOGLE_ID_TOKEN_HERE\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/google",
@@ -59,6 +113,33 @@
           "response": []
         },
         {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"REFRESH_TOKEN_HERE\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "refresh"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
           "name": "Get Current User",
           "request": {
             "method": "GET",
@@ -67,6 +148,506 @@
               "raw": "{{base_url}}/users/me",
               "host": ["{{base_url}}"],
               "path": ["users", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"email\": \"updated@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/me",
+              "host": ["{{base_url}}"],
+              "path": ["users", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User Account",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users/me",
+              "host": ["{{base_url}}"],
+              "path": ["users", "me"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Kid Profiles",
+      "item": [
+        {
+          "name": "List Kid Profiles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/kids",
+              "host": ["{{base_url}}"],
+              "path": ["kids"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Kid Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Emma\",\n  \"ageRange\": \"6-8\",\n  \"avatarKey\": \"avatar_girl_1\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/kids",
+              "host": ["{{base_url}}"],
+              "path": ["kids"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Kid Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/kids/{{kid_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["kids", "{{kid_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Kid Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Emma Updated\",\n  \"ageRange\": \"9-12\",\n  \"avatarKey\": \"avatar_girl_2\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/kids/{{kid_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["kids", "{{kid_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Kid Profile",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/kids/{{kid_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["kids", "{{kid_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Content",
+      "item": [
+        {
+          "name": "List Content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content?ageRange=6-8&type=story&limit=20&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["content"],
+              "query": [
+                {
+                  "key": "ageRange",
+                  "value": "6-8"
+                },
+                {
+                  "key": "type",
+                  "value": "story"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content/search?q=adventure&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["content", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "adventure"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Featured Content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content/featured?limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["content", "featured"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Content by Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content/adventure-story-1",
+              "host": ["{{base_url}}"],
+              "path": ["content", "adventure-story-1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Content by Type",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content/type/story?limit=20&offset=0&ageRange=6-8",
+              "host": ["{{base_url}}"],
+              "path": ["content", "type", "story"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "ageRange",
+                  "value": "6-8"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Avatars",
+      "item": [
+        {
+          "name": "Get Available Avatars",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/avatars",
+              "host": ["{{base_url}}"],
+              "path": ["avatars"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Explore",
+      "item": [
+        {
+          "name": "Get Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/explore/categories?limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["explore", "categories"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Continue Playing",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/explore/continue?limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["explore", "continue"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Collections",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/explore/collections?limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["explore", "collections"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Collection Content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/explore/collections/featured-stories?limit=20&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["explore", "collections", "featured-stories"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Favorites",
+      "item": [
+        {
+          "name": "Get User Favorites",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/favorites?limit=50&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["favorites"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add to Favorites",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentId\": \"{{content_id}}\",\n  \"contentType\": \"story\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/favorites",
+              "host": ["{{base_url}}"],
+              "path": ["favorites"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove from Favorites",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/favorites/FAVORITE_ID",
+              "host": ["{{base_url}}"],
+              "path": ["favorites", "FAVORITE_ID"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check Favorite Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/favorites/check/{{content_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["favorites", "check", "{{content_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Progress Tracking",
+      "item": [
+        {
+          "name": "Update Progress",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentId\": \"{{content_id}}\",\n  \"progress\": 120,\n  \"total\": 300,\n  \"completed\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/progress",
+              "host": ["{{base_url}}"],
+              "path": ["progress"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Content Progress",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/progress/{{content_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["progress", "{{content_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Progress",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/progress?limit=50&offset=0&completed=false",
+              "host": ["{{base_url}}"],
+              "path": ["progress"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "completed",
+                  "value": "false"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Progress",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/progress/{{content_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["progress", "{{content_id}}"]
             }
           },
           "response": []
@@ -420,14 +1001,29 @@
           "response": []
         },
         {
+          "name": "Detailed Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health/detailed",
+              "host": ["{{base_url}}"],
+              "path": ["health", "detailed"]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "API Root",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/../../",
-              "host": ["{{base_url}}"],
-              "path": ["../../"]
+              "raw": "http://localhost:5000/",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": [""]
             }
           },
           "response": []
