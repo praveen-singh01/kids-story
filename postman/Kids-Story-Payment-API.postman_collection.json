@@ -1,8 +1,8 @@
 {
   "info": {
-    "name": "Kids Story Payment API",
-    "description": "Complete API collection for Kids Story payment microservice integration",
-    "version": "1.0.0",
+    "name": "Kids Story API - Bilingual Support",
+    "description": "Complete API collection for Kids Story app with bilingual content support (English & Hindi), payment integration, and all core features",
+    "version": "2.0.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -286,7 +286,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/content?ageRange=6-8&type=story&limit=20&offset=0",
+              "raw": "{{base_url}}/content?ageRange=6-8&type=story&limit=20&offset=0&language=en",
               "host": ["{{base_url}}"],
               "path": ["content"],
               "query": [
@@ -305,6 +305,47 @@
                 {
                   "key": "offset",
                   "value": "0"
+                },
+                {
+                  "key": "language",
+                  "value": "en",
+                  "description": "Language code (en for English, hi for Hindi)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Content (Hindi)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content?ageRange=6-8&type=story&limit=20&offset=0&language=hi",
+              "host": ["{{base_url}}"],
+              "path": ["content"],
+              "query": [
+                {
+                  "key": "ageRange",
+                  "value": "6-8"
+                },
+                {
+                  "key": "type",
+                  "value": "story"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "language",
+                  "value": "hi",
+                  "description": "Language code (en for English, hi for Hindi)"
                 }
               ]
             }
@@ -317,17 +358,52 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/content/search?q=adventure&limit=10",
+              "raw": "{{base_url}}/content/search?query=buddha&limit=10&language=en",
               "host": ["{{base_url}}"],
               "path": ["content", "search"],
               "query": [
                 {
-                  "key": "q",
-                  "value": "adventure"
+                  "key": "query",
+                  "value": "buddha",
+                  "description": "Search query string"
                 },
                 {
                   "key": "limit",
                   "value": "10"
+                },
+                {
+                  "key": "language",
+                  "value": "en",
+                  "description": "Language code (en for English, hi for Hindi)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Content (Hindi)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content/search?query=बुद्ध&limit=10&language=hi",
+              "host": ["{{base_url}}"],
+              "path": ["content", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "बुद्ध",
+                  "description": "Search query string in Hindi"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "language",
+                  "value": "hi",
+                  "description": "Language code (en for English, hi for Hindi)"
                 }
               ]
             }
@@ -340,13 +416,42 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/content/featured?limit=10",
+              "raw": "{{base_url}}/content/featured?limit=10&language=en",
               "host": ["{{base_url}}"],
               "path": ["content", "featured"],
               "query": [
                 {
                   "key": "limit",
                   "value": "10"
+                },
+                {
+                  "key": "language",
+                  "value": "en",
+                  "description": "Language code (en for English, hi for Hindi)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Featured Content (Hindi)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content/featured?limit=10&language=hi",
+              "host": ["{{base_url}}"],
+              "path": ["content", "featured"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "language",
+                  "value": "hi",
+                  "description": "Language code (en for English, hi for Hindi)"
                 }
               ]
             }
@@ -359,9 +464,36 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/content/adventure-story-1",
+              "raw": "{{base_url}}/content/buddha-and-angulimala?language=en",
               "host": ["{{base_url}}"],
-              "path": ["content", "adventure-story-1"]
+              "path": ["content", "buddha-and-angulimala"],
+              "query": [
+                {
+                  "key": "language",
+                  "value": "en",
+                  "description": "Language code (en for English, hi for Hindi)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Content by Slug (Hindi)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content/buddha-and-angulimala?language=hi",
+              "host": ["{{base_url}}"],
+              "path": ["content", "buddha-and-angulimala"],
+              "query": [
+                {
+                  "key": "language",
+                  "value": "hi",
+                  "description": "Language code (en for English, hi for Hindi)"
+                }
+              ]
             }
           },
           "response": []
@@ -372,7 +504,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/content/type/story?limit=20&offset=0&ageRange=6-8",
+              "raw": "{{base_url}}/content/type/story?limit=20&offset=0&ageRange=6-8&language=en",
               "host": ["{{base_url}}"],
               "path": ["content", "type", "story"],
               "query": [
@@ -387,8 +519,58 @@
                 {
                   "key": "ageRange",
                   "value": "6-8"
+                },
+                {
+                  "key": "language",
+                  "value": "en",
+                  "description": "Language code (en for English, hi for Hindi)"
                 }
               ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Content by Type (Hindi)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content/type/story?limit=20&offset=0&ageRange=6-8&language=hi",
+              "host": ["{{base_url}}"],
+              "path": ["content", "type", "story"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "ageRange",
+                  "value": "6-8"
+                },
+                {
+                  "key": "language",
+                  "value": "hi",
+                  "description": "Language code (en for English, hi for Hindi)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Available Languages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content/languages",
+              "host": ["{{base_url}}"],
+              "path": ["content", "languages"]
             }
           },
           "response": []

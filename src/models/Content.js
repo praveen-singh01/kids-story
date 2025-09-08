@@ -12,12 +12,42 @@ const contentMetadataSchema = new mongoose.Schema({
   }
 }, { _id: false });
 
+// Schema for language-specific content
+const languageContentSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 200
+  },
+  description: {
+    type: String,
+    maxlength: 2000
+  },
+  audioUrl: {
+    type: String,
+    required: true
+  },
+  imageUrl: {
+    type: String,
+    required: true
+  },
+  thumbnailUrl: {
+    type: String
+  },
+  metadata: {
+    type: contentMetadataSchema,
+    default: () => ({})
+  }
+}, { _id: false });
+
 const contentSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
     enum: ['story', 'meditation', 'affirmation', 'sound']
   },
+  // Base title and slug (usually in default language)
   title: {
     type: String,
     required: true,
@@ -29,6 +59,7 @@ const contentSchema = new mongoose.Schema({
     unique: true,
     lowercase: true
   },
+  // Base description (usually in default language)
   description: {
     type: String,
     maxlength: 2000
@@ -48,6 +79,27 @@ const contentSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   }],
+
+  // Language support
+  defaultLanguage: {
+    type: String,
+    default: 'en',
+    enum: ['en', 'hi'],
+    maxlength: 5
+  },
+  availableLanguages: [{
+    type: String,
+    enum: ['en', 'hi'],
+    maxlength: 5
+  }],
+
+  // Language-specific content
+  languages: {
+    type: mongoose.Schema.Types.Mixed,
+    default: () => ({})
+  },
+
+  // Legacy fields for backward compatibility
   language: {
     type: String,
     default: 'en',
@@ -59,16 +111,15 @@ const contentSchema = new mongoose.Schema({
     maxlength: 5
   },
   audioUrl: {
-    type: String,
-    required: true
+    type: String
   },
   imageUrl: {
-    type: String,
-    required: true
+    type: String
   },
   thumbnailUrl: {
     type: String
   },
+
   isFeatured: {
     type: Boolean,
     default: false
@@ -109,6 +160,9 @@ const contentSchema = new mongoose.Schema({
       delete ret.isActive;
       delete ret.viewCount;
       delete ret.favoriteCount;
+
+      // Languages is already an object, no conversion needed
+
       return ret;
     }
   }
@@ -122,9 +176,11 @@ contentSchema.index({ tags: 1, isActive: 1 });
 contentSchema.index({ isFeatured: 1, isActive: 1 });
 contentSchema.index({ popularityScore: -1, isActive: 1 });
 contentSchema.index({ publishedAt: -1, isActive: 1 });
+contentSchema.index({ defaultLanguage: 1, isActive: 1 });
+contentSchema.index({ availableLanguages: 1, isActive: 1 });
 contentSchema.index({ title: 'text', description: 'text' }); // Text search index
 
-// Pre-save middleware to generate slug
+// Pre-save middleware to generate slug and handle language setup
 contentSchema.pre('save', function(next) {
   if (this.isModified('title') || this.isNew) {
     this.slug = slugify(this.title, {
@@ -133,6 +189,28 @@ contentSchema.pre('save', function(next) {
       remove: /[*+~.()'"!:@]/g
     });
   }
+
+  // Ensure availableLanguages includes defaultLanguage
+  if (this.defaultLanguage && !this.availableLanguages.includes(this.defaultLanguage)) {
+    this.availableLanguages.push(this.defaultLanguage);
+  }
+
+  // For backward compatibility: if legacy fields exist but no language content, create it
+  if (this.isNew && this.audioUrl && this.imageUrl && (!this.languages || Object.keys(this.languages).length === 0)) {
+    if (!this.languages) {
+      this.languages = {};
+    }
+
+    this.languages[this.defaultLanguage || 'en'] = {
+      title: this.title,
+      description: this.description,
+      audioUrl: this.audioUrl,
+      imageUrl: this.imageUrl,
+      thumbnailUrl: this.thumbnailUrl,
+      metadata: this.metadata
+    };
+  }
+
   next();
 });
 
@@ -148,6 +226,59 @@ contentSchema.methods.updatePopularityScore = function() {
   const score = Math.min(5, (this.favoriteCount * 2 + this.viewCount * 0.1) / 100);
   this.popularityScore = Math.round(score * 10) / 10; // Round to 1 decimal
   return this.save();
+};
+
+// Method to get content in a specific language
+contentSchema.methods.getLanguageContent = function(language = 'en') {
+  // If languages object exists and has the requested language
+  if (this.languages && this.languages[language]) {
+    return this.languages[language];
+  }
+
+  // Fallback to default language
+  if (this.languages && this.languages[this.defaultLanguage]) {
+    return this.languages[this.defaultLanguage];
+  }
+
+  // Legacy fallback - return base fields
+  return {
+    title: this.title,
+    description: this.description,
+    audioUrl: this.audioUrl,
+    imageUrl: this.imageUrl,
+    thumbnailUrl: this.thumbnailUrl,
+    metadata: this.metadata
+  };
+};
+
+// Method to add or update language content
+contentSchema.methods.setLanguageContent = function(language, content) {
+  if (!this.languages) {
+    this.languages = {};
+  }
+
+  this.languages[language] = content;
+
+  // Update available languages
+  if (!this.availableLanguages.includes(language)) {
+    this.availableLanguages.push(language);
+  }
+
+  return this;
+};
+
+// Method to get content with language-specific data merged
+contentSchema.methods.toLanguageJSON = function(language = 'en') {
+  const obj = this.toJSON();
+  const langContent = this.getLanguageContent(language);
+
+  // Merge language-specific content
+  return {
+    ...obj,
+    ...langContent,
+    requestedLanguage: language,
+    availableLanguages: this.availableLanguages
+  };
 };
 
 module.exports = mongoose.model('Content', contentSchema);

@@ -1,6 +1,14 @@
-# Kids Story Complete API - Postman Collection
+# Kids Story Complete API - Postman Collection (Bilingual Support)
 
-This directory contains comprehensive Postman collections and environments for testing the complete Kids Story API, including all endpoints for authentication, content management, user profiles, payment integration, and more.
+This directory contains comprehensive Postman collections and environments for testing the complete Kids Story API, including all endpoints for authentication, **bilingual content management**, user profiles, payment integration, and more.
+
+## 🌟 NEW: Bilingual Content Support
+
+The API now supports **English** and **Hindi** content with language-specific:
+- Titles and descriptions
+- Audio files
+- Images and thumbnails
+- Metadata and summaries
 
 ## 📁 Files Included
 
@@ -56,12 +64,33 @@ This directory contains comprehensive Postman collections and environments for t
 - `PATCH /kids/:id` - Update kid profile
 - `DELETE /kids/:id` - Delete kid profile
 
-### 📚 Content Management
-- `GET /content` - List content with filtering
-- `GET /content/search` - Search content
-- `GET /content/featured` - Get featured content
-- `GET /content/:slug` - Get content by slug
-- `GET /content/type/:type` - Get content by type
+### 📚 Content Management (Bilingual Support)
+- `GET /content` - List content with filtering and language support
+- `GET /content/search` - Search content in specific language
+- `GET /content/featured` - Get featured content with language support
+- `GET /content/:slug` - Get content by slug in requested language
+- `GET /content/type/:type` - Get content by type with language filtering
+- `GET /content/languages` - Get available languages ⭐ NEW
+
+#### Language Parameters
+All content endpoints now support the `language` parameter:
+- **English**: `language=en` (default)
+- **Hindi**: `language=hi`
+
+#### Bilingual Response Format
+```json
+{
+  "success": true,
+  "data": {
+    "title": "बुद्ध और अंगुलिमाल",
+    "description": "करुणा और परिवर्तन की कहानी...",
+    "audioUrl": "/assets/ElevenLabs_buddha_and_angulimala.mp3",
+    "imageUrl": "/assets/Hindi.png",
+    "availableLanguages": ["en", "hi"],
+    "requestedLanguage": "hi"
+  }
+}
+```
 
 ### 🎭 Avatars
 - `GET /avatars` - Get available avatars
@@ -136,13 +165,22 @@ This directory contains comprehensive Postman collections and environments for t
 3. Set both in environment variables
 ```
 
-### 2. Content Discovery Flow
+### 2. Content Discovery Flow (Bilingual)
 ```
-1. Get Featured Content → Browse featured items
-2. Search Content → Find specific content
-3. Get Content by Slug → View detailed content
-4. Add to Favorites → Save liked content
-5. Update Progress → Track listening progress
+1. Get Available Languages → Check supported languages
+2. Get Featured Content → Browse featured items (with language)
+3. Search Content → Find specific content (with language)
+4. Get Content by Slug → View detailed content (with language)
+5. Add to Favorites → Save liked content
+6. Update Progress → Track listening progress
+```
+
+#### Bilingual Testing Examples
+```
+English: GET /content?language=en&type=story
+Hindi:   GET /content?language=hi&type=story
+Search:  GET /content/search?query=बुद्ध&language=hi
+Slug:    GET /content/buddha-and-angulimala?language=hi
 ```
 
 ### 3. Kid Profile Management Flow

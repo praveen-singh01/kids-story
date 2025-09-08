@@ -1,6 +1,12 @@
 const express = require('express');
 const { query, param, validationResult } = require('express-validator');
 const { optionalAuth } = require('../middleware/auth');
+const {
+  validateLanguage,
+  setDefaultLanguage,
+  normalizeLanguage,
+  addLocalizedErrorHelper
+} = require('../middleware/language');
 const { Content } = require('../models');
 const logger = require('../config/logger');
 
@@ -14,6 +20,23 @@ const handleValidationErrors = (req, res, next) => {
     return res.status(400).error(errorMessages, 'Validation failed');
   }
   next();
+};
+
+// Helper function to format content with language support
+const formatContentWithLanguage = (content, language = 'en') => {
+  if (Array.isArray(content)) {
+    return content.map(item => {
+      if (typeof item.toLanguageJSON === 'function') {
+        return item.toLanguageJSON(language);
+      }
+      return item;
+    });
+  } else {
+    if (typeof content.toLanguageJSON === 'function') {
+      return content.toLanguageJSON(language);
+    }
+    return content;
+  }
 };
 
 // Validation middleware
@@ -37,7 +60,8 @@ const validateContentQuery = [
   query('type')
     .optional()
     .isIn(['story', 'meditation', 'affirmation', 'sound'])
-    .withMessage('Type must be one of: story, meditation, affirmation, sound')
+    .withMessage('Type must be one of: story, meditation, affirmation, sound'),
+  ...validateLanguage
 ];
 
 const validateSearchQuery = [
@@ -59,52 +83,61 @@ const validateSlug = [
 ];
 
 // GET /content - List content items with filtering
-router.get('/', optionalAuth, validateContentQuery, handleValidationErrors, async (req, res) => {
+router.get('/', optionalAuth, validateContentQuery, handleValidationErrors, setDefaultLanguage, normalizeLanguage, addLocalizedErrorHelper, async (req, res) => {
   try {
     const {
       ageRange,
       tags,
       type,
+      language = 'en',
       limit = 20,
       offset = 0
     } = req.query;
 
     // Build filter query
     const filter = { isActive: true };
-    
+
     if (ageRange) {
       filter.ageRange = ageRange;
     }
-    
+
     if (type) {
       filter.type = type;
     }
-    
+
     if (tags) {
       const tagArray = tags.split(',').map(tag => tag.trim().toLowerCase());
       filter.tags = { $in: tagArray };
     }
 
-    // Execute query with pagination
+    // Filter by available languages if language is specified
+    if (language && language !== 'en') {
+      filter.availableLanguages = language;
+    }
+
+    // Execute query with pagination (don't use lean() to preserve methods)
     const content = await Content.find(filter)
       .sort({ isFeatured: -1, popularityScore: -1, publishedAt: -1 })
       .limit(parseInt(limit))
-      .skip(parseInt(offset))
-      .lean(); // Use lean() for better performance
+      .skip(parseInt(offset));
 
     // Get total count for pagination
     const total = await Content.countDocuments(filter);
 
+    // Format content with language-specific data
+    const formattedContent = formatContentWithLanguage(content, language);
+
     res.success({
-      content,
+      content: formattedContent,
       pagination: {
         total,
         limit: parseInt(limit),
         offset: parseInt(offset),
         hasMore: (parseInt(offset) + parseInt(limit)) < total
-      }
+      },
+      language: language
     }, 'Content retrieved successfully');
-    
+
   } catch (error) {
     logger.error('Get content error:', error);
     res.status(500).error(['Failed to retrieve content'], 'Internal server error');
@@ -114,48 +147,102 @@ router.get('/', optionalAuth, validateContentQuery, handleValidationErrors, asyn
 // GET /content/search - Search content by query
 router.get('/search', optionalAuth, validateSearchQuery, handleValidationErrors, async (req, res) => {
   try {
-    const { query: searchQuery, limit = 20 } = req.query;
+    const { query: searchQuery, limit = 20, language = 'en' } = req.query;
 
-    // Use MongoDB text search
-    const content = await Content.find({
+    // Build search filter
+    const searchFilter = {
       $and: [
         { isActive: true },
         {
-          $text: { 
+          $text: {
             $search: searchQuery,
             $caseSensitive: false
           }
         }
       ]
-    })
-    .select('title slug type durationSec ageRange tags audioUrl imageUrl isFeatured popularityScore publishedAt')
-    .sort({ score: { $meta: 'textScore' }, popularityScore: -1 })
-    .limit(parseInt(limit))
-    .lean();
+    };
 
-    res.success(content, 'Search results retrieved successfully');
-    
+    // Filter by available languages if language is specified
+    if (language && language !== 'en') {
+      searchFilter.$and.push({ availableLanguages: language });
+    }
+
+    // Use MongoDB text search
+    const content = await Content.find(searchFilter)
+      .select('title slug type durationSec ageRange tags audioUrl imageUrl isFeatured popularityScore publishedAt languages defaultLanguage availableLanguages')
+      .sort({ score: { $meta: 'textScore' }, popularityScore: -1 })
+      .limit(parseInt(limit));
+
+    // Format content with language-specific data
+    const formattedContent = formatContentWithLanguage(content, language);
+
+    res.success({
+      content: formattedContent,
+      language: language
+    }, 'Search results retrieved successfully');
+
   } catch (error) {
     logger.error('Search content error:', error);
     res.status(500).error(['Failed to search content'], 'Internal server error');
   }
 });
 
+// GET /content/languages - Get available languages
+router.get('/languages', async (req, res) => {
+  try {
+    // Get distinct available languages from all active content
+    const languages = await Content.distinct('availableLanguages', { isActive: true });
+
+    // Ensure 'en' is always included as it's the default
+    const uniqueLanguages = [...new Set(['en', ...languages])];
+
+    // Language metadata
+    const languageInfo = {
+      en: { name: 'English', nativeName: 'English' },
+      hi: { name: 'Hindi', nativeName: 'हिन्दी' }
+    };
+
+    const result = uniqueLanguages.map(lang => ({
+      code: lang,
+      ...languageInfo[lang]
+    }));
+
+    res.success(result, 'Available languages retrieved successfully');
+
+  } catch (error) {
+    logger.error('Get available languages error:', error);
+    res.status(500).error(['Failed to retrieve available languages'], 'Internal server error');
+  }
+});
+
 // GET /content/featured - Get featured content
 router.get('/featured', optionalAuth, async (req, res) => {
   try {
-    const { limit = 10 } = req.query;
+    const { limit = 10, language = 'en' } = req.query;
 
-    const content = await Content.find({ 
-      isActive: true, 
-      isFeatured: true 
-    })
-    .sort({ popularityScore: -1, publishedAt: -1 })
-    .limit(parseInt(limit))
-    .lean();
+    // Build filter
+    const filter = {
+      isActive: true,
+      isFeatured: true
+    };
 
-    res.success(content, 'Featured content retrieved successfully');
-    
+    // Filter by available languages if language is specified
+    if (language && language !== 'en') {
+      filter.availableLanguages = language;
+    }
+
+    const content = await Content.find(filter)
+      .sort({ popularityScore: -1, publishedAt: -1 })
+      .limit(parseInt(limit));
+
+    // Format content with language-specific data
+    const formattedContent = formatContentWithLanguage(content, language);
+
+    res.success({
+      content: formattedContent,
+      language: language
+    }, 'Featured content retrieved successfully');
+
   } catch (error) {
     logger.error('Get featured content error:', error);
     res.status(500).error(['Failed to retrieve featured content'], 'Internal server error');
@@ -163,24 +250,33 @@ router.get('/featured', optionalAuth, async (req, res) => {
 });
 
 // GET /content/:slug - Get content item by slug
-router.get('/:slug', optionalAuth, validateSlug, handleValidationErrors, async (req, res) => {
+router.get('/:slug', optionalAuth, validateLanguage, validateSlug, handleValidationErrors, setDefaultLanguage, normalizeLanguage, addLocalizedErrorHelper, async (req, res) => {
   try {
     const { slug } = req.params;
+    const { language = 'en' } = req.query;
 
-    const content = await Content.findOne({ 
-      slug, 
-      isActive: true 
-    }).lean();
+    const content = await Content.findOne({
+      slug,
+      isActive: true
+    });
 
     if (!content) {
-      return res.status(404).error(['Content not found'], 'Not found');
+      return res.localizedError('content_not_found', 404);
+    }
+
+    // Check if requested language is available
+    if (language !== 'en' && !content.availableLanguages.includes(language)) {
+      return res.localizedError('language_not_supported', 400);
     }
 
     // Increment view count (fire and forget)
     Content.findByIdAndUpdate(content._id, { $inc: { viewCount: 1 } }).exec();
 
-    res.success(content, 'Content retrieved successfully');
-    
+    // Format content with language-specific data
+    const formattedContent = formatContentWithLanguage(content, language);
+
+    res.success(formattedContent, 'Content retrieved successfully');
+
   } catch (error) {
     logger.error('Get content by slug error:', error);
     res.status(500).error(['Failed to retrieve content'], 'Internal server error');
@@ -191,7 +287,7 @@ router.get('/:slug', optionalAuth, validateSlug, handleValidationErrors, async (
 router.get('/type/:type', optionalAuth, async (req, res) => {
   try {
     const { type } = req.params;
-    const { limit = 20, offset = 0, ageRange } = req.query;
+    const { limit = 20, offset = 0, ageRange, language = 'en' } = req.query;
 
     if (!['story', 'meditation', 'affirmation', 'sound'].includes(type)) {
       return res.status(400).error(['Invalid content type'], 'Bad request');
@@ -202,24 +298,32 @@ router.get('/type/:type', optionalAuth, async (req, res) => {
       filter.ageRange = ageRange;
     }
 
+    // Filter by available languages if language is specified
+    if (language && language !== 'en') {
+      filter.availableLanguages = language;
+    }
+
     const content = await Content.find(filter)
       .sort({ popularityScore: -1, publishedAt: -1 })
       .limit(parseInt(limit))
-      .skip(parseInt(offset))
-      .lean();
+      .skip(parseInt(offset));
 
     const total = await Content.countDocuments(filter);
 
+    // Format content with language-specific data
+    const formattedContent = formatContentWithLanguage(content, language);
+
     res.success({
-      content,
+      content: formattedContent,
       pagination: {
         total,
         limit: parseInt(limit),
         offset: parseInt(offset),
         hasMore: (parseInt(offset) + parseInt(limit)) < total
-      }
+      },
+      language: language
     }, `${type} content retrieved successfully`);
-    
+
   } catch (error) {
     logger.error('Get content by type error:', error);
     res.status(500).error(['Failed to retrieve content'], 'Internal server error');

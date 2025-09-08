@@ -10,7 +10,8 @@
     "test:watch": "jest --watch",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
-    "seed": "node src/scripts/seed.js"
+    "seed": "node src/scripts/seed.js",
+    "migrate:bilingual": "node scripts/migrate-bilingual.js"
   },
   "keywords": [
     "nodejs",

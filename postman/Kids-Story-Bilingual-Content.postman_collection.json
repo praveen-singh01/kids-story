@@ -1,0 +1,319 @@
+{
+  "info": {
+    "name": "Kids Story - Bilingual Content API",
+    "description": "Focused collection for testing bilingual content features (English & Hindi)",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🌐 Language Support",
+      "item": [
+        {
+          "name": "Get Available Languages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content/languages",
+              "host": ["{{base_url}}"],
+              "path": ["content", "languages"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📚 Content - English",
+      "item": [
+        {
+          "name": "List Content (English)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content?language=en&type=story&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["content"],
+              "query": [
+                {
+                  "key": "language",
+                  "value": "en",
+                  "description": "English language"
+                },
+                {
+                  "key": "type",
+                  "value": "story"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Content (English)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content/search?query=buddha&language=en&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["content", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "buddha"
+                },
+                {
+                  "key": "language",
+                  "value": "en",
+                  "description": "English language"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Featured Content (English)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content/featured?language=en&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["content", "featured"],
+              "query": [
+                {
+                  "key": "language",
+                  "value": "en",
+                  "description": "English language"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Content by Slug (English)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content/buddha-and-angulimala?language=en",
+              "host": ["{{base_url}}"],
+              "path": ["content", "buddha-and-angulimala"],
+              "query": [
+                {
+                  "key": "language",
+                  "value": "en",
+                  "description": "English language"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Content by Type (English)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content/type/story?language=en&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["content", "type", "story"],
+              "query": [
+                {
+                  "key": "language",
+                  "value": "en",
+                  "description": "English language"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🇮🇳 Content - Hindi",
+      "item": [
+        {
+          "name": "List Content (Hindi)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content?language=hi&type=story&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["content"],
+              "query": [
+                {
+                  "key": "language",
+                  "value": "hi",
+                  "description": "Hindi language"
+                },
+                {
+                  "key": "type",
+                  "value": "story"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Content (Hindi)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content/search?query=बुद्ध&language=hi&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["content", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "बुद्ध",
+                  "description": "Search query in Hindi"
+                },
+                {
+                  "key": "language",
+                  "value": "hi",
+                  "description": "Hindi language"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Featured Content (Hindi)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content/featured?language=hi&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["content", "featured"],
+              "query": [
+                {
+                  "key": "language",
+                  "value": "hi",
+                  "description": "Hindi language"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Content by Slug (Hindi)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content/buddha-and-angulimala?language=hi",
+              "host": ["{{base_url}}"],
+              "path": ["content", "buddha-and-angulimala"],
+              "query": [
+                {
+                  "key": "language",
+                  "value": "hi",
+                  "description": "Hindi language"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Content by Type (Hindi)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content/type/story?language=hi&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["content", "type", "story"],
+              "query": [
+                {
+                  "key": "language",
+                  "value": "hi",
+                  "description": "Hindi language"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔄 Language Comparison",
+      "item": [
+        {
+          "name": "Compare Same Content - English vs Hindi",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content/buddha-and-angulimala?language=en",
+              "host": ["{{base_url}}"],
+              "path": ["content", "buddha-and-angulimala"],
+              "query": [
+                {
+                  "key": "language",
+                  "value": "en",
+                  "description": "Change to 'hi' to see Hindi version"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
