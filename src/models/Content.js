@@ -1,6 +1,21 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
 
+// CDN configuration
+const CDN_BASE_URL = process.env.CLOUDFRONT_DISTRIBUTION_DOMAIN
+  ? `https://${process.env.CLOUDFRONT_DISTRIBUTION_DOMAIN}`
+  : 'https://d1ta1qd8y4woyq.cloudfront.net';
+
+// Helper function to convert relative URLs to CDN URLs
+const toCDNUrl = (url) => {
+  if (!url) return url;
+  if (url.startsWith('http')) return url; // Already absolute URL
+  if (url.startsWith('/assets/')) {
+    return `${CDN_BASE_URL}${url}`;
+  }
+  return url;
+};
+
 const contentMetadataSchema = new mongoose.Schema({
   keyValue: {
     type: String,
@@ -230,25 +245,39 @@ contentSchema.methods.updatePopularityScore = function() {
 
 // Method to get content in a specific language
 contentSchema.methods.getLanguageContent = function(language = 'en') {
+  let content;
+
   // If languages object exists and has the requested language
   if (this.languages && this.languages[language]) {
-    return this.languages[language];
+    content = this.languages[language];
   }
-
   // Fallback to default language
-  if (this.languages && this.languages[this.defaultLanguage]) {
-    return this.languages[this.defaultLanguage];
+  else if (this.languages && this.languages[this.defaultLanguage]) {
+    content = this.languages[this.defaultLanguage];
+  }
+  // Legacy fallback - return base fields
+  else {
+    content = {
+      title: this.title,
+      description: this.description,
+      audioUrl: this.audioUrl,
+      imageUrl: this.imageUrl,
+      thumbnailUrl: this.thumbnailUrl,
+      metadata: this.metadata
+    };
   }
 
-  // Legacy fallback - return base fields
-  return {
-    title: this.title,
-    description: this.description,
-    audioUrl: this.audioUrl,
-    imageUrl: this.imageUrl,
-    thumbnailUrl: this.thumbnailUrl,
-    metadata: this.metadata
-  };
+  // Convert relative URLs to CDN URLs
+  if (content) {
+    return {
+      ...content,
+      audioUrl: toCDNUrl(content.audioUrl),
+      imageUrl: toCDNUrl(content.imageUrl),
+      thumbnailUrl: toCDNUrl(content.thumbnailUrl)
+    };
+  }
+
+  return content;
 };
 
 // Method to add or update language content
@@ -273,12 +302,19 @@ contentSchema.methods.toLanguageJSON = function(language = 'en') {
   const langContent = this.getLanguageContent(language);
 
   // Merge language-specific content
-  return {
+  const result = {
     ...obj,
     ...langContent,
     requestedLanguage: language,
     availableLanguages: this.availableLanguages
   };
+
+  // Ensure CDN URLs for any remaining relative URLs in the base object
+  if (result.audioUrl) result.audioUrl = toCDNUrl(result.audioUrl);
+  if (result.imageUrl) result.imageUrl = toCDNUrl(result.imageUrl);
+  if (result.thumbnailUrl) result.thumbnailUrl = toCDNUrl(result.thumbnailUrl);
+
+  return result;
 };
 
 module.exports = mongoose.model('Content', contentSchema);

@@ -84,8 +84,9 @@ All content endpoints now support the `language` parameter:
   "data": {
     "title": "बुद्ध और अंगुलिमाल",
     "description": "करुणा और परिवर्तन की कहानी...",
-    "audioUrl": "/assets/ElevenLabs_buddha_and_angulimala.mp3",
-    "imageUrl": "/assets/Hindi.png",
+    "audioUrl": "https://d1ta1qd8y4woyq.cloudfront.net/assets/ElevenLabs_buddha_and_angulimala.mp3",
+    "imageUrl": "https://d1ta1qd8y4woyq.cloudfront.net/assets/Hindi.png",
+    "thumbnailUrl": "https://d1ta1qd8y4woyq.cloudfront.net/assets/Hindi.png",
     "availableLanguages": ["en", "hi"],
     "requestedLanguage": "hi"
   }

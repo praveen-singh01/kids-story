@@ -9,58 +9,63 @@ const { Content } = require('../models');
 // Configuration
 const SUPPORTED_LANGUAGES = ['en', 'hi'];
 const ASSETS_PATH = path.join(__dirname, '../../assets');
+const CDN_BASE_URL = process.env.CLOUDFRONT_DISTRIBUTION_DOMAIN
+  ? `https://${process.env.CLOUDFRONT_DISTRIBUTION_DOMAIN}`
+  : 'https://d1ta1qd8y4woyq.cloudfront.net'; // Fallback CDN URL
 
-// Language mappings for the existing assets
-const ASSET_MAPPINGS = {
-  'buddha-and-angulimala': {
-    en: {
-      title: 'Buddha and Angulimala',
-      description: 'A story about compassion and transformation, where Buddha helps a feared bandit find peace.',
-      audioUrl: '/assets/Buddha and Angulimala.mp3',
-      imageUrl: '/assets/English_buddha (1).png',
-      thumbnailUrl: '/assets/English_buddha (1).png',
-      metadata: {
-        keyValue: 'Compassion',
-        summary: 'Through this powerful tale, children learn that everyone can change and find peace through compassion and understanding.'
+// Function to get asset mappings with CDN URLs
+function getAssetMappings() {
+  return {
+    'buddha-and-angulimala': {
+      en: {
+        title: 'Buddha and Angulimala',
+        description: 'A story about compassion and transformation, where Buddha helps a feared bandit find peace.',
+        audioUrl: `${CDN_BASE_URL}/assets/Buddha and Angulimala.mp3`,
+        imageUrl: `${CDN_BASE_URL}/assets/English_buddha (1).png`,
+        thumbnailUrl: `${CDN_BASE_URL}/assets/English_buddha (1).png`,
+        metadata: {
+          keyValue: 'Compassion',
+          summary: 'Through this powerful tale, children learn that everyone can change and find peace through compassion and understanding.'
+        }
+      },
+      hi: {
+        title: 'बुद्ध और अंगुलिमाल',
+        description: 'करुणा और परिवर्तन की कहानी, जहाँ बुद्ध एक डरावने डाकू को शांति पाने में मदद करते हैं।',
+        audioUrl: `${CDN_BASE_URL}/assets/ElevenLabs_buddha_and_angulimala.mp3`,
+        imageUrl: `${CDN_BASE_URL}/assets/Hindi.png`,
+        thumbnailUrl: `${CDN_BASE_URL}/assets/Hindi.png`,
+        metadata: {
+          keyValue: 'करुणा',
+          summary: 'इस शक्तिशाली कहानी के माध्यम से, बच्चे सीखते हैं कि हर कोई बदल सकता है और करुणा और समझ के माध्यम से शांति पा सकता है।'
+        }
       }
     },
-    hi: {
-      title: 'बुद्ध और अंगुलिमाल',
-      description: 'करुणा और परिवर्तन की कहानी, जहाँ बुद्ध एक डरावने डाकू को शांति पाने में मदद करते हैं।',
-      audioUrl: '/assets/ElevenLabs_buddha_and_angulimala.mp3',
-      imageUrl: '/assets/Hindi.png',
-      thumbnailUrl: '/assets/Hindi.png',
-      metadata: {
-        keyValue: 'करुणा',
-        summary: 'इस शक्तिशाली कहानी के माध्यम से, बच्चे सीखते हैं कि हर कोई बदल सकता है और करुणा और समझ के माध्यम से शांति पा सकता है।'
+    'brahmin-and-three-crooks': {
+      en: {
+        title: 'The Brahmin and Three Crooks',
+        description: 'A wise tale about how cleverness and deception can be overcome by wisdom and discernment.',
+        audioUrl: `${CDN_BASE_URL}/assets/ElevenLabs_The_Brahmin_and_the_Crooks_english.mp3`,
+        imageUrl: `${CDN_BASE_URL}/assets/English_bhramin.png`,
+        thumbnailUrl: `${CDN_BASE_URL}/assets/English_bhramin.png`,
+        metadata: {
+          keyValue: 'Wisdom',
+          summary: 'This story teaches children the importance of thinking carefully and not being easily fooled by others.'
+        }
+      },
+      hi: {
+        title: 'ब्राह्मण और तीन ठग',
+        description: 'एक बुद्धिमानी की कहानी जो बताती है कि कैसे चालाकी और धोखे को बुद्धि और विवेक से हराया जा सकता है।',
+        audioUrl: `${CDN_BASE_URL}/assets/ElevenLabs_brahmin_and_crooks_-_hindi.mp3`,
+        imageUrl: `${CDN_BASE_URL}/assets/Hindi_bhraman.png`,
+        thumbnailUrl: `${CDN_BASE_URL}/assets/Hindi_bhraman.png`,
+        metadata: {
+          keyValue: 'बुद्धि',
+          summary: 'यह कहानी बच्चों को सिखाती है कि सोच-समझकर काम करना और दूसरों से आसानी से धोखा न खाना कितना महत्वपूर्ण है।'
+        }
       }
     }
-  },
-  'brahmin-and-three-crooks': {
-    en: {
-      title: 'The Brahmin and Three Crooks',
-      description: 'A wise tale about how cleverness and deception can be overcome by wisdom and discernment.',
-      audioUrl: '/assets/ElevenLabs_The_Brahmin_and_the_Crooks_english.mp3',
-      imageUrl: '/assets/English_bhramin.png',
-      thumbnailUrl: '/assets/English_bhramin.png',
-      metadata: {
-        keyValue: 'Wisdom',
-        summary: 'This story teaches children the importance of thinking carefully and not being easily fooled by others.'
-      }
-    },
-    hi: {
-      title: 'ब्राह्मण और तीन ठग',
-      description: 'एक बुद्धिमानी की कहानी जो बताती है कि कैसे चालाकी और धोखे को बुद्धि और विवेक से हराया जा सकता है।',
-      audioUrl: '/assets/ElevenLabs_brahmin_and_crooks_-_hindi.mp3',
-      imageUrl: '/assets/Hindi_bhraman.png',
-      thumbnailUrl: '/assets/Hindi_bhraman.png',
-      metadata: {
-        keyValue: 'बुद्धि',
-        summary: 'यह कहानी बच्चों को सिखाती है कि सोच-समझकर काम करना और दूसरों से आसानी से धोखा न खाना कितना महत्वपूर्ण है।'
-      }
-    }
-  }
-};
+  };
+}
 
 /**
  * Connect to MongoDB
@@ -152,9 +157,10 @@ async function migrateExistingContent() {
 
       // Check if we have predefined mappings for this content
       const slug = content.slug;
+      const ASSET_MAPPINGS = getAssetMappings();
       if (ASSET_MAPPINGS[slug]) {
         console.log(`📝 Applying predefined mappings for: ${content.title}`);
-        
+
         // Update English content with better data
         if (ASSET_MAPPINGS[slug].en) {
           content.languages['en'] = ASSET_MAPPINGS[slug].en;
@@ -237,6 +243,7 @@ async function createSampleContent() {
       const bilingualStory = new Content(story.data);
 
       // Set language-specific content
+      const ASSET_MAPPINGS = getAssetMappings();
       bilingualStory.languages = {};
       bilingualStory.languages['en'] = ASSET_MAPPINGS[story.slug].en;
       bilingualStory.languages['hi'] = ASSET_MAPPINGS[story.slug].hi;

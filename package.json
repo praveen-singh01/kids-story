@@ -11,7 +11,8 @@
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "seed": "node src/scripts/seed.js",
-    "migrate:bilingual": "node scripts/migrate-bilingual.js"
+    "migrate:bilingual": "node scripts/migrate-bilingual.js",
+    "update:cdn": "node src/scripts/update-cdn-urls.js"
   },
   "keywords": [
     "nodejs",
