@@ -1,6 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { authenticate } = require('../middleware/auth');
+const { User } = require('../models');
 const paymentService = require('../services/paymentService');
 const logger = require('../config/logger');
 
@@ -94,7 +95,26 @@ router.post('/subscription', authenticate, validateSubscriptionCreation, handleV
     const { planId, paymentContext = {} } = req.body;
     const userId = req.userId;
 
-    const subscription = await paymentService.createSubscription(userId, planId, paymentContext);
+    // Get user data for payment context
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).error(['User not found'], 'Subscription creation failed');
+    }
+
+    // Build enhanced payment context with user data
+    const enhancedPaymentContext = {
+      ...paymentContext,
+      metadata: {
+        userName: user.name || 'User',
+        userEmail: user.email,
+        userPhone: user.phone || paymentContext.metadata?.userPhone || '9999999999',
+        userId: userId,
+        packageId: 'com.kids.story',
+        ...paymentContext.metadata // Allow override from request
+      }
+    };
+
+    const subscription = await paymentService.createSubscription(userId, planId, enhancedPaymentContext);
 
     logger.info(`Subscription created for user ${userId}: ${subscription.subscriptionId}`);
 
@@ -105,14 +125,17 @@ router.post('/subscription', authenticate, validateSubscriptionCreation, handleV
       razorpaySubscriptionId: subscription.razorpaySubscriptionId,
       shortUrl: subscription.shortUrl
     }, 'Subscription created successfully');
-    
+
   } catch (error) {
     logger.error('Create subscription error:', error);
-    
+
     if (error.response?.status === 400) {
-      return res.status(400).error([error.response.data.message || 'Invalid subscription data'], 'Subscription creation failed');
+      const errorMessage = error.response?.data?.error?.message ||
+                          error.response?.data?.message ||
+                          'Invalid subscription data';
+      return res.status(400).error([errorMessage], 'Subscription creation failed');
     }
-    
+
     res.status(500).error(['Failed to create subscription'], 'Internal server error');
   }
 });

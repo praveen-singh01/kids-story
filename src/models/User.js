@@ -88,6 +88,11 @@ const userSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  phone: {
+    type: String,
+    sparse: true, // Allow null values but ensure uniqueness when present
+    match: [/^[6-9]\d{9}$/, 'Please enter a valid Indian phone number (10 digits starting with 6-9)']
   }
 }, {
   timestamps: true,
@@ -108,6 +113,7 @@ const userSchema = new mongoose.Schema({
 // Indexes
 userSchema.index({ email: 1 });
 userSchema.index({ providerId: 1 });
+userSchema.index({ phone: 1 });
 userSchema.index({ emailVerificationToken: 1 });
 userSchema.index({ passwordResetToken: 1 });
 

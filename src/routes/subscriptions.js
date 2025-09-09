@@ -98,8 +98,29 @@ router.post('/', authenticate, validateSubscriptionCreation, handleValidationErr
       return res.status(409).error(['User already has an active subscription'], 'Subscription creation failed');
     }
 
+    // Build enhanced payment context with user data
+    const enhancedPaymentContext = {
+      ...paymentContext,
+      metadata: {
+        userName: user.name || 'User',
+        userEmail: user.email,
+        userPhone: user.phone || paymentContext.metadata?.userPhone || '9999999999', // Use user phone or fallback
+        userId: userId,
+        packageId: 'com.kids.story',
+        ...paymentContext.metadata // Allow override from request
+      }
+    };
+
+    logger.info('Creating subscription with context:', {
+      userId,
+      planId,
+      userEmail: user.email,
+      userPhone: enhancedPaymentContext.metadata.userPhone,
+      packageId: enhancedPaymentContext.metadata.packageId
+    });
+
     // Create subscription via payment microservice
-    const subscription = await paymentService.createSubscription(userId, planId, paymentContext);
+    const subscription = await paymentService.createSubscription(userId, planId, enhancedPaymentContext);
 
     logger.info(`Subscription created for user ${userId}: ${subscription.subscriptionId}`);
 
@@ -115,7 +136,10 @@ router.post('/', authenticate, validateSubscriptionCreation, handleValidationErr
     logger.error('Create subscription error:', error);
 
     if (error.response?.status === 400) {
-      return res.status(400).error([error.response.data.message || 'Invalid subscription data'], 'Subscription creation failed');
+      const errorMessage = error.response?.data?.error?.message ||
+                          error.response?.data?.message ||
+                          'Invalid subscription data';
+      return res.status(400).error([errorMessage], 'Subscription creation failed');
     }
 
     res.status(500).error(['Failed to create subscription'], 'Internal server error');

@@ -31,7 +31,11 @@ const validateRegistration = [
   body('name')
     .trim()
     .isLength({ min: 2, max: 100 })
-    .withMessage('Name must be between 2 and 100 characters')
+    .withMessage('Name must be between 2 and 100 characters'),
+  body('phone')
+    .optional()
+    .matches(/^[6-9]\d{9}$/)
+    .withMessage('Phone number must be 10 digits starting with 6-9')
 ];
 
 const validateLogin = [
@@ -69,24 +73,24 @@ const handleValidationErrors = (req, res, next) => {
 // POST /auth/register
 router.post('/register', authLimiter, validateRegistration, handleValidationErrors, async (req, res) => {
   try {
-    const { email, password, name } = req.body;
-    
-    const result = await authService.registerWithEmail({ email, password, name });
-    
+    const { email, password, name, phone } = req.body;
+
+    const result = await authService.registerWithEmail({ email, password, name, phone });
+
     res.status(201).success({
       user: result.user,
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
       emailVerificationToken: result.emailVerificationToken
     }, 'User registered successfully');
-    
+
   } catch (error) {
     logger.error('Registration error:', error);
-    
+
     if (error.message === 'User already exists with this email') {
       return res.status(409).error([error.message], 'Registration failed');
     }
-    
+
     res.status(500).error(['Registration failed'], 'Internal server error');
   }
 });

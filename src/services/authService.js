@@ -5,12 +5,20 @@ const logger = require('../config/logger');
 
 class AuthService {
   async registerWithEmail(userData) {
-    const { email, password, name } = userData;
+    const { email, password, name, phone } = userData;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       throw new Error('User already exists with this email');
+    }
+
+    // Check if phone number is already taken (if provided)
+    if (phone) {
+      const existingPhoneUser = await User.findOne({ phone });
+      if (existingPhoneUser) {
+        throw new Error('User already exists with this phone number');
+      }
     }
 
     // Generate email verification token
@@ -21,6 +29,7 @@ class AuthService {
       email,
       password,
       name,
+      phone,
       provider: 'email',
       emailVerificationToken,
       roles: ['user']
@@ -31,7 +40,7 @@ class AuthService {
     // Generate tokens
     const tokens = JWTUtils.generateTokens({ userId: user._id });
 
-    logger.info(`New user registered: ${email}`);
+    logger.info(`New user registered: ${email}${phone ? ` with phone: ${phone}` : ''}`);
 
     return {
       user,

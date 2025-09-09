@@ -1,8 +1,8 @@
 {
   "info": {
     "name": "Kids Story - Complete API Collection",
-    "description": "Complete API collection including all CRUD operations, admin endpoints, and update functionality",
-    "version": "2.0.0",
+    "description": "Complete API collection including all CRUD operations, admin endpoints, category management, explore endpoints, subscription management, payment processing, and comprehensive filtering functionality",
+    "version": "2.2.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -29,6 +29,21 @@
     {
       "key": "user_id",
       "value": "",
+      "type": "string"
+    },
+    {
+      "key": "category_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "subscription_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "plan_id",
+      "value": "plan_RAeTVEtz6dFtPY",
       "type": "string"
     }
   ],
@@ -149,6 +164,24 @@
                       "disabled": true
                     },
                     {
+                      "key": "category",
+                      "value": "{{category_id}}",
+                      "disabled": true,
+                      "description": "Filter by category ID"
+                    },
+                    {
+                      "key": "ageRange",
+                      "value": "6-8",
+                      "disabled": true,
+                      "description": "Filter by age range"
+                    },
+                    {
+                      "key": "tags",
+                      "value": "bedtime",
+                      "disabled": true,
+                      "description": "Filter by tags (comma-separated)"
+                    },
+                    {
                       "key": "newcollection",
                       "value": "true",
                       "disabled": true
@@ -225,14 +258,28 @@
                       "disabled": true
                     },
                     {
-                      "key": "newcollection",
-                      "value": "true",
-                      "disabled": true
+                      "key": "category",
+                      "value": "{{category_id}}",
+                      "disabled": true,
+                      "description": "Filter by category ID"
                     },
                     {
-                      "key": "trendingnow",
+                      "key": "type",
+                      "value": "story",
+                      "disabled": true,
+                      "description": "Filter by content type"
+                    },
+                    {
+                      "key": "featured",
                       "value": "true",
-                      "disabled": true
+                      "disabled": true,
+                      "description": "Filter by featured status"
+                    },
+                    {
+                      "key": "ageRange",
+                      "value": "6-8",
+                      "disabled": true,
+                      "description": "Filter by age range"
                     }
                   ]
                 }
@@ -260,7 +307,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"title\": \"New Test Story\",\n  \"description\": \"A test story for API testing\",\n  \"type\": \"story\",\n  \"ageRange\": \"6-8\",\n  \"language\": \"en\",\n  \"audioUrl\": \"https://d1ta1qd8y4woyq.cloudfront.net/uploads/audio/test.mp3\",\n  \"imageUrl\": \"https://d1ta1qd8y4woyq.cloudfront.net/uploads/image/test.png\",\n  \"durationSec\": 180,\n  \"featured\": false,\n  \"isNewCollection\": false,\n  \"isTrendingNow\": false\n}"
+                  "raw": "{\n  \"title\": \"New Test Story\",\n  \"description\": \"A test story for API testing\",\n  \"type\": \"story\",\n  \"ageRange\": \"6-8\",\n  \"language\": \"en\",\n  \"audioUrl\": \"https://d1ta1qd8y4woyq.cloudfront.net/uploads/audio/test.mp3\",\n  \"imageUrl\": \"https://d1ta1qd8y4woyq.cloudfront.net/uploads/image/test.png\",\n  \"durationSec\": 180,\n  \"category\": \"{{category_id}}\",\n  \"featured\": false,\n  \"isNewCollection\": false,\n  \"isTrendingNow\": false\n}"
                 },
                 "url": {
                   "raw": "{{base_url}}/admin/content",
@@ -402,6 +449,22 @@
           "item": [
             {
               "name": "Get All Categories (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "    const response = pm.response.json();",
+                      "    if (response.data.categories && response.data.categories.length > 0) {",
+                      "        pm.collectionVariables.set('category_id', response.data.categories[0]._id);",
+                      "        console.log('Category ID saved:', response.data.categories[0]._id);",
+                      "    }",
+                      "}"
+                    ]
+                  }
+                }
+              ],
               "request": {
                 "auth": {
                   "type": "bearer",
@@ -416,7 +479,7 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{base_url}}/admin/categories?page=1&limit=10&search=&isActive=true",
+                  "raw": "{{base_url}}/admin/categories?page=1&limit=10&search=&parentId=null&isActive=true",
                   "host": ["{{base_url}}"],
                   "path": ["admin", "categories"],
                   "query": [
@@ -434,6 +497,11 @@
                       "key": "search",
                       "value": "",
                       "description": "Search term for category name/description"
+                    },
+                    {
+                      "key": "parentId",
+                      "value": "null",
+                      "description": "Filter by parent category ID (null for top-level categories)"
                     },
                     {
                       "key": "isActive",
@@ -638,9 +706,16 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{base_url}}/categories",
+                  "raw": "{{base_url}}/categories?limit=20",
                   "host": ["{{base_url}}"],
-                  "path": ["categories"]
+                  "path": ["categories"],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "20",
+                      "description": "Number of categories to return (1-100)"
+                    }
+                  ]
                 }
               }
             },
@@ -679,9 +754,16 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{base_url}}/categories/mythology/subcategories",
+                  "raw": "{{base_url}}/categories/mythology/subcategories?limit=20",
                   "host": ["{{base_url}}"],
-                  "path": ["categories", "mythology", "subcategories"]
+                  "path": ["categories", "mythology", "subcategories"],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "20",
+                      "description": "Number of subcategories to return (1-100)"
+                    }
+                  ]
                 }
               }
             }
@@ -812,7 +894,103 @@
       ]
     },
     {
-      "name": "👥 User Management",
+      "name": "� Explore & Discovery",
+      "item": [
+        {
+          "name": "Get Browse Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/explore/categories?limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["explore", "categories"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of categories to return (1-50)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Continue Playing Items",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/explore/continue?limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["explore", "continue"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of continue items to return (1-50)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Featured Collections",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/explore/collections?limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["explore", "collections"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of collections to return (1-50)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Collection Content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/explore/collections/featured-stories?limit=20&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["explore", "collections", "featured-stories"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of content items to return"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Pagination offset"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "�👥 User Management",
       "item": [
         {
           "name": "🔧 Admin User Operations",
@@ -1014,6 +1192,293 @@
                   "raw": "{{base_url}}/users/me",
                   "host": ["{{base_url}}"],
                   "path": ["users", "me"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "💳 Subscription Management",
+      "item": [
+        {
+          "name": "📋 User Subscription Operations",
+          "item": [
+            {
+              "name": "Get Available Plans",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "    const response = pm.response.json();",
+                      "    if (response.data && Array.isArray(response.data)) {",
+                      "        console.log('Available plans:', response.data.length);",
+                      "        response.data.forEach(plan => {",
+                      "            console.log(`Plan: ${plan.name} (${plan.id}) - ${plan.price} ${plan.currency}`);",
+                      "        });",
+                      "        // Set default plan for testing",
+                      "        const trialPlan = response.data.find(p => p.id === 'plan_kids_story_trial');",
+                      "        if (trialPlan) {",
+                      "            pm.collectionVariables.set('plan_id', trialPlan.id);",
+                      "            console.log('Trial plan set as default:', trialPlan.id);",
+                      "        }",
+                      "    }",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/subscriptions/plans",
+                  "host": ["{{base_url}}"],
+                  "path": ["subscriptions", "plans"]
+                }
+              }
+            },
+            {
+              "name": "Get My Subscription",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "    const response = pm.response.json();",
+                      "    if (response.data) {",
+                      "        const subscription = response.data;",
+                      "        console.log('Current subscription plan:', subscription.plan);",
+                      "        console.log('Subscription status:', subscription.status);",
+                      "        if (subscription.currentPeriodEnd) {",
+                      "            console.log('Current period ends:', subscription.currentPeriodEnd);",
+                      "        }",
+                      "        if (subscription.subscriptionId) {",
+                      "            pm.collectionVariables.set('subscription_id', subscription.subscriptionId);",
+                      "            console.log('Subscription ID saved:', subscription.subscriptionId);",
+                      "        }",
+                      "    }",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/subscriptions/me",
+                  "host": ["{{base_url}}"],
+                  "path": ["subscriptions", "me"]
+                }
+              }
+            },
+            {
+              "name": "Create Subscription",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const response = pm.response.json();",
+                      "    if (response.data.subscriptionId) {",
+                      "        pm.collectionVariables.set('subscription_id', response.data.subscriptionId);",
+                      "        console.log('Subscription ID saved:', response.data.subscriptionId);",
+                      "    }",
+                      "    if (response.data.razorpaySubscriptionId) {",
+                      "        console.log('Razorpay Subscription ID:', response.data.razorpaySubscriptionId);",
+                      "    }",
+                      "    if (response.data.shortUrl) {",
+                      "        console.log('Payment URL:', response.data.shortUrl);",
+                      "    }",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"planId\": \"{{plan_id}}\",\n  \"paymentContext\": {\n    \"source\": \"mobile_app\",\n    \"userAgent\": \"Kids Story App v1.0\",\n    \"metadata\": {\n      \"userName\": \"Test User\",\n      \"userEmail\": \"test@example.com\",\n      \"userPhone\": \"+91-9876543210\",\n      \"testMode\": true\n    }\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/subscriptions",
+                  "host": ["{{base_url}}"],
+                  "path": ["subscriptions"]
+                }
+              }
+            },
+            {
+              "name": "Update Subscription",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"planId\": \"plan_kids_story_monthly\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/subscriptions/me",
+                  "host": ["{{base_url}}"],
+                  "path": ["subscriptions", "me"]
+                }
+              }
+            },
+            {
+              "name": "Cancel Subscription",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/subscriptions/me/cancel",
+                  "host": ["{{base_url}}"],
+                  "path": ["subscriptions", "me", "cancel"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "💰 Payment Operations",
+          "item": [
+            {
+              "name": "Create Payment Subscription",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const response = pm.response.json();",
+                      "    if (response.data.subscriptionId) {",
+                      "        pm.collectionVariables.set('subscription_id', response.data.subscriptionId);",
+                      "        console.log('Payment Subscription ID saved:', response.data.subscriptionId);",
+                      "    }",
+                      "    if (response.data.razorpaySubscriptionId) {",
+                      "        console.log('Razorpay Subscription ID:', response.data.razorpaySubscriptionId);",
+                      "    }",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"planId\": \"{{plan_id}}\",\n  \"paymentContext\": {\n    \"source\": \"web_app\",\n    \"userAgent\": \"Kids Story Web v1.0\",\n    \"returnUrl\": \"https://kidsstory.com/payment/success\"\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/payment/subscription",
+                  "host": ["{{base_url}}"],
+                  "path": ["payment", "subscription"]
+                }
+              }
+            },
+            {
+              "name": "Get User Subscriptions",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/payment/subscriptions?page=1&limit=10",
+                  "host": ["{{base_url}}"],
+                  "path": ["payment", "subscriptions"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1",
+                      "description": "Page number for pagination"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10",
+                      "description": "Number of subscriptions per page"
+                    }
+                  ]
                 }
               }
             }
@@ -1268,6 +1733,183 @@
               "raw": "{{base_url}}/health/detailed",
               "host": ["{{base_url}}"],
               "path": ["health", "detailed"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔧 Admin Subscription Management",
+      "item": [
+        {
+          "name": "List All Subscriptions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data.subscriptions && response.data.subscriptions.length > 0) {",
+                  "        const firstSub = response.data.subscriptions[0];",
+                  "        if (firstSub.id) {",
+                  "            pm.collectionVariables.set('subscription_id', firstSub.id);",
+                  "            console.log('Admin Subscription ID saved:', firstSub.id);",
+                  "        }",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/payment/subscriptions?page=1&limit=10&status=active&plan=premium",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "payment", "subscriptions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of subscriptions per page"
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "description": "Filter by subscription status",
+                  "disabled": true
+                },
+                {
+                  "key": "plan",
+                  "value": "premium",
+                  "description": "Filter by subscription plan",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription Details",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/payment/subscriptions/{{subscription_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "payment", "subscriptions", "{{subscription_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Subscription (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/payment/subscriptions/{{subscription_id}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "payment", "subscriptions", "{{subscription_id}}", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "Get Revenue Analytics",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/payment/analytics/revenue?timeRange=30d&groupBy=week",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "payment", "analytics", "revenue"],
+              "query": [
+                {
+                  "key": "timeRange",
+                  "value": "30d",
+                  "description": "Time range for analytics (7d, 30d, 90d, 1y)"
+                },
+                {
+                  "key": "groupBy",
+                  "value": "week",
+                  "description": "Group results by (day, week, month)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription Analytics",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/payment/analytics/subscriptions?timeRange=30d",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "payment", "analytics", "subscriptions"],
+              "query": [
+                {
+                  "key": "timeRange",
+                  "value": "30d",
+                  "description": "Time range for analytics (7d, 30d, 90d, 1y)"
+                }
+              ]
             }
           }
         }
