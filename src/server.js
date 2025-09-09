@@ -24,6 +24,7 @@ const progressRoutes = require('./routes/progress');
 const subscriptionRoutes = require('./routes/subscriptions');
 const paymentRoutes = require('./routes/payment');
 const healthRoutes = require('./routes/health');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -39,7 +40,12 @@ app.use(helmet({
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:5000'],
+  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [
+    'http://localhost:5000',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002'
+  ],
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -83,6 +89,7 @@ app.use(`/api/${API_VERSION}/favorites`, favoriteRoutes);
 app.use(`/api/${API_VERSION}/progress`, progressRoutes);
 app.use(`/api/${API_VERSION}/subscriptions`, subscriptionRoutes);
 app.use(`/api/${API_VERSION}/payment`, paymentRoutes);
+app.use(`/api/${API_VERSION}/admin`, adminRoutes);
 app.use(`/api/${API_VERSION}/health`, healthRoutes);
 
 // Root endpoint

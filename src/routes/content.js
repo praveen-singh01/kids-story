@@ -91,7 +91,9 @@ router.get('/', optionalAuth, validateContentQuery, handleValidationErrors, setD
       type,
       language = 'en',
       limit = 20,
-      offset = 0
+      offset = 0,
+      newcollection,
+      trendingnow
     } = req.query;
 
     // Build filter query
@@ -111,8 +113,18 @@ router.get('/', optionalAuth, validateContentQuery, handleValidationErrors, setD
     }
 
     // Filter by available languages if language is specified
-    if (language && language !== 'en') {
+    if (language) {
       filter.availableLanguages = language;
+    }
+
+    // Filter by new collection
+    if (newcollection === 'true') {
+      filter.isNewCollection = true;
+    }
+
+    // Filter by trending now
+    if (trendingnow === 'true') {
+      filter.isTrendingNow = true;
     }
 
     // Execute query with pagination (don't use lean() to preserve methods)
@@ -163,7 +175,7 @@ router.get('/search', optionalAuth, validateSearchQuery, handleValidationErrors,
     };
 
     // Filter by available languages if language is specified
-    if (language && language !== 'en') {
+    if (language) {
       searchFilter.$and.push({ availableLanguages: language });
     }
 
@@ -227,7 +239,7 @@ router.get('/featured', optionalAuth, async (req, res) => {
     };
 
     // Filter by available languages if language is specified
-    if (language && language !== 'en') {
+    if (language) {
       filter.availableLanguages = language;
     }
 
@@ -299,7 +311,7 @@ router.get('/type/:type', optionalAuth, async (req, res) => {
     }
 
     // Filter by available languages if language is specified
-    if (language && language !== 'en') {
+    if (language) {
       filter.availableLanguages = language;
     }
 

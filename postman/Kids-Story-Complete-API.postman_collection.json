@@ -1,0 +1,860 @@
+{
+  "info": {
+    "name": "Kids Story - Complete API Collection",
+    "description": "Complete API collection including all CRUD operations, admin endpoints, and update functionality",
+    "version": "2.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "content_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{admin_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "item": [
+        {
+          "name": "Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('admin_token', response.data.accessToken);",
+                  "    console.log('Admin token saved:', response.data.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@kidsstory.com\",\n  \"password\": \"admin123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "User Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('user_token', response.data.accessToken);",
+                  "    console.log('User token saved:', response.data.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📚 Content Management",
+      "item": [
+        {
+          "name": "📖 Content CRUD",
+          "item": [
+            {
+              "name": "List All Content",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/content?limit=10",
+                  "host": ["{{base_url}}"],
+                  "path": ["content"],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    },
+                    {
+                      "key": "language",
+                      "value": "en",
+                      "disabled": true
+                    },
+                    {
+                      "key": "type",
+                      "value": "story",
+                      "disabled": true
+                    },
+                    {
+                      "key": "newcollection",
+                      "value": "true",
+                      "disabled": true
+                    },
+                    {
+                      "key": "trendingnow",
+                      "value": "true",
+                      "disabled": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Content by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/content/{{content_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["content", "{{content_id}}"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "🔧 Admin Content Operations",
+          "item": [
+            {
+              "name": "List Admin Content",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "    const response = pm.response.json();",
+                      "    if (response.data.content && response.data.content.length > 0) {",
+                      "        pm.collectionVariables.set('content_id', response.data.content[0]._id);",
+                      "        console.log('Content ID saved:', response.data.content[0]._id);",
+                      "    }",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/content?limit=10",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "content"],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    },
+                    {
+                      "key": "language",
+                      "value": "en",
+                      "disabled": true
+                    },
+                    {
+                      "key": "newcollection",
+                      "value": "true",
+                      "disabled": true
+                    },
+                    {
+                      "key": "trendingnow",
+                      "value": "true",
+                      "disabled": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create Content",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"New Test Story\",\n  \"description\": \"A test story for API testing\",\n  \"type\": \"story\",\n  \"ageRange\": \"6-8\",\n  \"language\": \"en\",\n  \"audioUrl\": \"https://d1ta1qd8y4woyq.cloudfront.net/uploads/audio/test.mp3\",\n  \"imageUrl\": \"https://d1ta1qd8y4woyq.cloudfront.net/uploads/image/test.png\",\n  \"durationSec\": 180,\n  \"featured\": false,\n  \"isNewCollection\": false,\n  \"isTrendingNow\": false\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/content",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "content"]
+                }
+              }
+            },
+            {
+              "name": "Update Content",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Updated Story Title\",\n  \"description\": \"Updated story description\",\n  \"type\": \"story\",\n  \"ageRange\": \"6-8\",\n  \"language\": \"en\",\n  \"featured\": true,\n  \"isNewCollection\": true,\n  \"isTrendingNow\": false,\n  \"isActive\": true\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/content/{{content_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "content", "{{content_id}}"]
+                }
+              }
+            },
+            {
+              "name": "Toggle Featured Status",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"featured\": true\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/content/{{content_id}}/featured",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "content", "{{content_id}}", "featured"]
+                }
+              }
+            },
+            {
+              "name": "Delete Content",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/content/{{content_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "content", "{{content_id}}"]
+                }
+              }
+            },
+            {
+              "name": "Upload File",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": []
+                    },
+                    {
+                      "key": "type",
+                      "value": "audio",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/content/upload",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "content", "upload"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "👥 User Management",
+      "item": [
+        {
+          "name": "🔧 Admin User Operations",
+          "item": [
+            {
+              "name": "List Users",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "    const response = pm.response.json();",
+                      "    if (response.data.users && response.data.users.length > 0) {",
+                      "        pm.collectionVariables.set('user_id', response.data.users[0]._id);",
+                      "        console.log('User ID saved:', response.data.users[0]._id);",
+                      "    }",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/users?page=1&limit=10",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "users"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    },
+                    {
+                      "key": "search",
+                      "value": "test",
+                      "disabled": true
+                    },
+                    {
+                      "key": "provider",
+                      "value": "email",
+                      "disabled": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create User",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"testuser@example.com\",\n  \"password\": \"password123\",\n  \"provider\": \"email\",\n  \"roles\": [\"user\"],\n  \"subscription\": {\n    \"plan\": \"free\",\n    \"status\": \"active\"\n  },\n  \"isActive\": true\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/users",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "users"]
+                }
+              }
+            },
+            {
+              "name": "Update User",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Updated User Name\",\n  \"email\": \"updated@example.com\",\n  \"roles\": [\"user\", \"admin\"],\n  \"subscription\": {\n    \"plan\": \"premium\",\n    \"status\": \"active\"\n  },\n  \"isActive\": true\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/users/{{user_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "users", "{{user_id}}"]
+                }
+              }
+            },
+            {
+              "name": "Delete User",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/users/{{user_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "users", "{{user_id}}"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "👤 User Profile",
+          "item": [
+            {
+              "name": "Get My Profile",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/users/me",
+                  "host": ["{{base_url}}"],
+                  "path": ["users", "me"]
+                }
+              }
+            },
+            {
+              "name": "Update My Profile",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{user_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Updated Profile Name\",\n  \"email\": \"newemail@example.com\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/users/me",
+                  "host": ["{{base_url}}"],
+                  "path": ["users", "me"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🔍 Content Filtering & Search",
+      "item": [
+        {
+          "name": "Filter by New Collection",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content?newcollection=true&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["content"],
+              "query": [
+                {
+                  "key": "newcollection",
+                  "value": "true"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filter by Trending Now",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content?trendingnow=true&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["content"],
+              "query": [
+                {
+                  "key": "trendingnow",
+                  "value": "true"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filter by Language (Hindi)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content?language=hi&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["content"],
+              "query": [
+                {
+                  "key": "language",
+                  "value": "hi"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filter by Type (Story)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content?type=story&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["content"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "story"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filter by Age Range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content?ageRange=6-8&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["content"],
+              "query": [
+                {
+                  "key": "ageRange",
+                  "value": "6-8"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Combined Filters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/content?type=story&language=en&newcollection=true&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["content"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "story"
+                },
+                {
+                  "key": "language",
+                  "value": "en"
+                },
+                {
+                  "key": "newcollection",
+                  "value": "true"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Analytics & System",
+      "item": [
+        {
+          "name": "Dashboard Analytics",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/analytics/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "analytics", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "Content Analytics",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/analytics/content?timeRange=30d",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "analytics", "content"],
+              "query": [
+                {
+                  "key": "timeRange",
+                  "value": "30d"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "User Analytics",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/analytics/users?timeRange=30d",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "analytics", "users"],
+              "query": [
+                {
+                  "key": "timeRange",
+                  "value": "30d"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Detailed Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health/detailed",
+              "host": ["{{base_url}}"],
+              "path": ["health", "detailed"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

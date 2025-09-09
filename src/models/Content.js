@@ -87,7 +87,7 @@ const contentSchema = new mongoose.Schema({
   ageRange: {
     type: String,
     required: true,
-    enum: ['3-5', '6-8', '9-12']
+    enum: ['3-5', '6-8', '9-12', '13+']
   },
   tags: [{
     type: String,
@@ -136,6 +136,16 @@ const contentSchema = new mongoose.Schema({
   },
 
   isFeatured: {
+    type: Boolean,
+    default: false
+  },
+
+  // New collection and trending flags
+  isNewCollection: {
+    type: Boolean,
+    default: false
+  },
+  isTrendingNow: {
     type: Boolean,
     default: false
   },
@@ -189,6 +199,8 @@ contentSchema.index({ type: 1, isActive: 1 });
 contentSchema.index({ ageRange: 1, isActive: 1 });
 contentSchema.index({ tags: 1, isActive: 1 });
 contentSchema.index({ isFeatured: 1, isActive: 1 });
+contentSchema.index({ isNewCollection: 1, isActive: 1 });
+contentSchema.index({ isTrendingNow: 1, isActive: 1 });
 contentSchema.index({ popularityScore: -1, isActive: 1 });
 contentSchema.index({ publishedAt: -1, isActive: 1 });
 contentSchema.index({ defaultLanguage: 1, isActive: 1 });
