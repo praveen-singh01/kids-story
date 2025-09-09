@@ -321,6 +321,9 @@ contentSchema.methods.toLanguageJSON = function(language = 'en') {
     availableLanguages: this.availableLanguages
   };
 
+  // Remove the full languages object since we're returning language-specific data
+  delete result.languages;
+
   // Ensure CDN URLs for any remaining relative URLs in the base object
   if (result.audioUrl) result.audioUrl = toCDNUrl(result.audioUrl);
   if (result.imageUrl) result.imageUrl = toCDNUrl(result.imageUrl);
