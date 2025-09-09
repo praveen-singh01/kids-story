@@ -95,6 +95,13 @@ const contentSchema = new mongoose.Schema({
     lowercase: true
   }],
 
+  // Category reference
+  category: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category',
+    required: false // Optional for backward compatibility
+  },
+
   // Language support
   defaultLanguage: {
     type: String,
@@ -198,6 +205,7 @@ contentSchema.index({ slug: 1 });
 contentSchema.index({ type: 1, isActive: 1 });
 contentSchema.index({ ageRange: 1, isActive: 1 });
 contentSchema.index({ tags: 1, isActive: 1 });
+contentSchema.index({ category: 1, isActive: 1 });
 contentSchema.index({ isFeatured: 1, isActive: 1 });
 contentSchema.index({ isNewCollection: 1, isActive: 1 });
 contentSchema.index({ isTrendingNow: 1, isActive: 1 });

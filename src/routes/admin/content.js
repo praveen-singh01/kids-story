@@ -35,6 +35,7 @@ const validateContentCreation = [
   body('audioUrl').notEmpty().isURL(),
   body('imageUrl').notEmpty().isURL(),
   body('durationSec').isInt({ min: 1 }),
+  body('category').optional().isMongoId(),
   body('featured').optional().isBoolean(),
   body('isNewCollection').optional().isBoolean(),
   body('isTrendingNow').optional().isBoolean()
@@ -49,6 +50,7 @@ const validateContentUpdate = [
   body('audioUrl').optional().isURL(),
   body('imageUrl').optional().isURL(),
   body('durationSec').optional().isInt({ min: 1 }),
+  body('category').optional().isMongoId(),
   body('featured').optional().isBoolean(),
   body('isNewCollection').optional().isBoolean(),
   body('isTrendingNow').optional().isBoolean(),
@@ -61,6 +63,7 @@ const validatePagination = [
   query('search').optional().trim(),
   query('type').optional().isIn(['story', 'meditation', 'sound']),
   query('language').optional().isIn(['en', 'hi']),
+  query('category').optional().isMongoId(),
   query('featured').optional().isBoolean().toBoolean(),
   query('ageRange').optional().isIn(['3-5', '6-8', '9-12', '13+'])
 ];
@@ -120,6 +123,7 @@ router.get('/',
         search,
         type,
         language,
+        category,
         featured,
         ageRange,
         newcollection,
@@ -131,15 +135,18 @@ router.get('/',
       
       if (search) {
         filter.$or = [
-          { 'content.en.title': { $regex: search, $options: 'i' } },
-          { 'content.hi.title': { $regex: search, $options: 'i' } },
-          { 'content.en.description': { $regex: search, $options: 'i' } },
-          { 'content.hi.description': { $regex: search, $options: 'i' } }
+          { 'languages.en.title': { $regex: search, $options: 'i' } },
+          { 'languages.hi.title': { $regex: search, $options: 'i' } },
+          { 'languages.en.description': { $regex: search, $options: 'i' } },
+          { 'languages.hi.description': { $regex: search, $options: 'i' } },
+          { 'title': { $regex: search, $options: 'i' } },
+          { 'description': { $regex: search, $options: 'i' } }
         ];
       }
       
       if (type) filter.type = type;
       if (ageRange) filter.ageRange = ageRange;
+      if (category) filter.category = category;
       if (typeof featured === 'boolean') filter.featured = featured;
 
       // Language filtering - only show content that has the requested language
@@ -162,6 +169,7 @@ router.get('/',
 
       // Get content with pagination
       const content = await Content.find(filter)
+        .populate('category', 'name slug imageUrl')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -255,7 +263,7 @@ router.get('/stats',
         { $unwind: '$content' },
         {
           $project: {
-            title: '$content.content.en.title',
+            title: '$content.languages.en.title',
             playCount: 1
           }
         }
@@ -381,7 +389,16 @@ router.post('/',
   async (req, res) => {
     try {
       const contentData = req.body;
-      
+
+      // Validate category if provided
+      if (contentData.category) {
+        const { Category } = require('../../models');
+        const category = await Category.findById(contentData.category);
+        if (!category || !category.isActive) {
+          return res.status(400).error(['Invalid or inactive category'], 'Category validation failed');
+        }
+      }
+
       // Create content structure based on language
       const content = new Content({
         type: contentData.type,
@@ -389,6 +406,7 @@ router.post('/',
         description: contentData.description,
         durationSec: contentData.durationSec,
         ageRange: contentData.ageRange,
+        category: contentData.category,
         featured: contentData.featured || false,
         isNewCollection: contentData.isNewCollection || false,
         isTrendingNow: contentData.isTrendingNow || false,
@@ -439,9 +457,19 @@ router.patch('/:id',
         return res.status(404).error(['Content not found'], 'Content not found');
       }
 
+      // Validate category if provided
+      if (updateData.category) {
+        const { Category } = require('../../models');
+        const category = await Category.findById(updateData.category);
+        if (!category || !category.isActive) {
+          return res.status(400).error(['Invalid or inactive category'], 'Category validation failed');
+        }
+      }
+
       // Update main fields
       if (updateData.type) content.type = updateData.type;
       if (updateData.ageRange) content.ageRange = updateData.ageRange;
+      if (updateData.category !== undefined) content.category = updateData.category;
       if (typeof updateData.featured === 'boolean') content.featured = updateData.featured;
       if (typeof updateData.isNewCollection === 'boolean') content.isNewCollection = updateData.isNewCollection;
       if (typeof updateData.isTrendingNow === 'boolean') content.isTrendingNow = updateData.isTrendingNow;
@@ -449,17 +477,31 @@ router.patch('/:id',
 
       // Update language-specific content
       if (updateData.language && updateData.title) {
-        if (!content.content[updateData.language]) {
-          content.content[updateData.language] = {};
-          content.availableLanguages.push(updateData.language);
+        // Initialize languages object if it doesn't exist
+        if (!content.languages) {
+          content.languages = {};
         }
-        
-        if (updateData.title) content.content[updateData.language].title = updateData.title;
-        if (updateData.description) content.content[updateData.language].description = updateData.description;
-        if (updateData.audioUrl) content.content[updateData.language].audioUrl = updateData.audioUrl;
-        if (updateData.imageUrl) content.content[updateData.language].imageUrl = updateData.imageUrl;
-        if (updateData.duration) content.content[updateData.language].duration = updateData.duration;
+
+        if (!content.languages[updateData.language]) {
+          content.languages[updateData.language] = {};
+          if (!content.availableLanguages.includes(updateData.language)) {
+            content.availableLanguages.push(updateData.language);
+          }
+        }
+
+        if (updateData.title) content.languages[updateData.language].title = updateData.title;
+        if (updateData.description) content.languages[updateData.language].description = updateData.description;
+        if (updateData.audioUrl) content.languages[updateData.language].audioUrl = updateData.audioUrl;
+        if (updateData.imageUrl) content.languages[updateData.language].imageUrl = updateData.imageUrl;
+        if (updateData.durationSec) content.languages[updateData.language].durationSec = updateData.durationSec;
       }
+
+      // Also update the main fields for backward compatibility
+      if (updateData.title) content.title = updateData.title;
+      if (updateData.description) content.description = updateData.description;
+      if (updateData.audioUrl) content.audioUrl = updateData.audioUrl;
+      if (updateData.imageUrl) content.imageUrl = updateData.imageUrl;
+      if (updateData.durationSec) content.durationSec = updateData.durationSec;
 
       await content.save();
 

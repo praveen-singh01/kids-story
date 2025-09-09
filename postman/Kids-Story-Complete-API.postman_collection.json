@@ -395,6 +395,423 @@
       ]
     },
     {
+      "name": "🏷️ Category Management",
+      "item": [
+        {
+          "name": "📋 Admin Category Operations",
+          "item": [
+            {
+              "name": "Get All Categories (Admin)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/categories?page=1&limit=10&search=&isActive=true",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "categories"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1",
+                      "description": "Page number for pagination"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10",
+                      "description": "Number of categories per page"
+                    },
+                    {
+                      "key": "search",
+                      "value": "",
+                      "description": "Search term for category name/description"
+                    },
+                    {
+                      "key": "isActive",
+                      "value": "true",
+                      "description": "Filter by active status"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Category by ID (Admin)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/categories/{{category_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "categories", "{{category_id}}"]
+                }
+              }
+            },
+            {
+              "name": "Create Category",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Adventure Stories\",\n  \"description\": \"Exciting adventures and journeys for young explorers\",\n  \"imageUrl\": \"https://d1ta1qd8y4woyq.cloudfront.net/uploads/categories/adventure.jpg\",\n  \"parentId\": null,\n  \"sortOrder\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/categories",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "categories"]
+                }
+              }
+            },
+            {
+              "name": "Update Category",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Updated Adventure Stories\",\n  \"description\": \"Updated description for adventure stories\",\n  \"imageUrl\": \"https://d1ta1qd8y4woyq.cloudfront.net/uploads/categories/adventure-updated.jpg\",\n  \"sortOrder\": 2,\n  \"isActive\": true\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/categories/{{category_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "categories", "{{category_id}}"]
+                }
+              }
+            },
+            {
+              "name": "Delete Category",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/categories/{{category_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "categories", "{{category_id}}"]
+                }
+              }
+            },
+            {
+              "name": "Toggle Category Active Status",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/categories/{{category_id}}/toggle-active",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "categories", "{{category_id}}", "toggle-active"]
+                }
+              }
+            },
+            {
+              "name": "Upload Category Image",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "image",
+                      "type": "file",
+                      "src": [],
+                      "description": "Category image file (jpeg, jpg, png, gif, webp)"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/categories/upload",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "categories", "upload"]
+                }
+              }
+            },
+            {
+              "name": "Get Category Statistics",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/categories/stats",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "categories", "stats"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "🌐 Public Category Operations",
+          "item": [
+            {
+              "name": "Get All Categories (Public)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/categories",
+                  "host": ["{{base_url}}"],
+                  "path": ["categories"]
+                }
+              }
+            },
+            {
+              "name": "Get Category by Slug",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/categories/mythology?language=en&page=1&limit=10",
+                  "host": ["{{base_url}}"],
+                  "path": ["categories", "mythology"],
+                  "query": [
+                    {
+                      "key": "language",
+                      "value": "en",
+                      "description": "Language filter (en, hi)"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1",
+                      "description": "Page number for pagination"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10",
+                      "description": "Number of content items per page"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Category Subcategories",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/categories/mythology/subcategories",
+                  "host": ["{{base_url}}"],
+                  "path": ["categories", "mythology", "subcategories"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "🔍 Content with Category Filtering",
+          "item": [
+            {
+              "name": "Get Content by Category (English)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/content?category=mythology&language=en&limit=20&offset=0",
+                  "host": ["{{base_url}}"],
+                  "path": ["content"],
+                  "query": [
+                    {
+                      "key": "category",
+                      "value": "mythology",
+                      "description": "Category slug or ID"
+                    },
+                    {
+                      "key": "language",
+                      "value": "en",
+                      "description": "Language filter"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20",
+                      "description": "Number of items per page"
+                    },
+                    {
+                      "key": "offset",
+                      "value": "0",
+                      "description": "Pagination offset"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Content by Category (Hindi)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/content?category=panchatantra&language=hi&limit=20&offset=0",
+                  "host": ["{{base_url}}"],
+                  "path": ["content"],
+                  "query": [
+                    {
+                      "key": "category",
+                      "value": "panchatantra",
+                      "description": "Category slug or ID"
+                    },
+                    {
+                      "key": "language",
+                      "value": "hi",
+                      "description": "Language filter"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20",
+                      "description": "Number of items per page"
+                    },
+                    {
+                      "key": "offset",
+                      "value": "0",
+                      "description": "Pagination offset"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Content with Multiple Filters",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/content?category=mythology&language=en&type=story&ageRange=3-5&tags=moral&newcollection=true&trendingnow=false",
+                  "host": ["{{base_url}}"],
+                  "path": ["content"],
+                  "query": [
+                    {
+                      "key": "category",
+                      "value": "mythology",
+                      "description": "Category filter"
+                    },
+                    {
+                      "key": "language",
+                      "value": "en",
+                      "description": "Language filter"
+                    },
+                    {
+                      "key": "type",
+                      "value": "story",
+                      "description": "Content type filter"
+                    },
+                    {
+                      "key": "ageRange",
+                      "value": "3-5",
+                      "description": "Age range filter"
+                    },
+                    {
+                      "key": "tags",
+                      "value": "moral",
+                      "description": "Tags filter (comma-separated)"
+                    },
+                    {
+                      "key": "newcollection",
+                      "value": "true",
+                      "description": "New collection filter"
+                    },
+                    {
+                      "key": "trendingnow",
+                      "value": "false",
+                      "description": "Trending now filter"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "👥 User Management",
       "item": [
         {

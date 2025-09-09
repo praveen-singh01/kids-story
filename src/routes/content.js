@@ -61,6 +61,10 @@ const validateContentQuery = [
     .optional()
     .isIn(['story', 'meditation', 'affirmation', 'sound'])
     .withMessage('Type must be one of: story, meditation, affirmation, sound'),
+  query('category')
+    .optional()
+    .isString()
+    .withMessage('Category must be a valid category slug or ID'),
   ...validateLanguage
 ];
 
@@ -89,6 +93,7 @@ router.get('/', optionalAuth, validateContentQuery, handleValidationErrors, setD
       ageRange,
       tags,
       type,
+      category,
       language = 'en',
       limit = 20,
       offset = 0,
@@ -112,6 +117,26 @@ router.get('/', optionalAuth, validateContentQuery, handleValidationErrors, setD
       filter.tags = { $in: tagArray };
     }
 
+    // Filter by category (can be slug or ObjectId)
+    if (category) {
+      const { Category } = require('../models');
+      let categoryFilter;
+
+      // Check if it's a valid ObjectId
+      if (category.match(/^[0-9a-fA-F]{24}$/)) {
+        categoryFilter = category;
+      } else {
+        // Assume it's a slug, find the category
+        const categoryDoc = await Category.findOne({ slug: category, isActive: true });
+        if (categoryDoc) {
+          categoryFilter = categoryDoc._id;
+        } else {
+          return res.status(404).error(['Category not found'], 'Category not found');
+        }
+      }
+      filter.category = categoryFilter;
+    }
+
     // Filter by available languages if language is specified
     if (language) {
       filter.availableLanguages = language;
@@ -129,6 +154,7 @@ router.get('/', optionalAuth, validateContentQuery, handleValidationErrors, setD
 
     // Execute query with pagination (don't use lean() to preserve methods)
     const content = await Content.find(filter)
+      .populate('category', 'name slug imageUrl')
       .sort({ isFeatured: -1, popularityScore: -1, publishedAt: -1 })
       .limit(parseInt(limit))
       .skip(parseInt(offset));
