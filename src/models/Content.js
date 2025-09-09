@@ -324,6 +324,18 @@ contentSchema.methods.toLanguageJSON = function(language = 'en') {
   // Remove the full languages object since we're returning language-specific data
   delete result.languages;
 
+  // Override legacy fields to match the requested language
+  // These fields should reflect the requested language, not the base document language
+  result.language = language;
+
+  // For region, we could map languages to regions, but for now keep it simple
+  // You might want to add language-to-region mapping in the future
+  if (language === 'hi') {
+    result.region = 'IN'; // Hindi -> India
+  } else if (language === 'en') {
+    result.region = 'US'; // English -> US (or could be GB, AU, etc.)
+  }
+
   // Ensure CDN URLs for any remaining relative URLs in the base object
   if (result.audioUrl) result.audioUrl = toCDNUrl(result.audioUrl);
   if (result.imageUrl) result.imageUrl = toCDNUrl(result.imageUrl);
