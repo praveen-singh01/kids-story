@@ -106,6 +106,55 @@ class PaymentServiceClient {
   }
 
   /**
+   * Create a trial-aware subscription for a user (NEW - supports trials)
+   * @param {string} userId - User ID
+   * @param {'monthly'|'yearly'} planType - Plan type
+   * @param {Object} paymentContext - Payment context with metadata
+   * @param {string} [callbackUrl] - Optional direct callback URL override
+   * @returns {Promise<Object>} Subscription data
+   */
+  async createSubscriptionTrialAware(userId, planType, paymentContext = {}, callbackUrl) {
+    try {
+      // Ensure paymentContext has required metadata with proper phone format
+      const enhancedPaymentContext = {
+        ...paymentContext,
+        metadata: {
+          ...paymentContext.metadata,
+          // Ensure phone number is in correct format (10 digits starting with 6-9)
+          userPhone: this.formatPhoneNumber(paymentContext.metadata?.userPhone)
+        }
+      };
+
+      const payload = {
+        userId,
+        planType,
+        packageName: 'com.kids.story',
+        paymentContext: enhancedPaymentContext
+      };
+      if (callbackUrl) payload.callbackUrl = callbackUrl;
+
+      const response = await axios.post(`${this.baseUrl}/api/payment/subscription`, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.generateJWT(userId)}`,
+          'x-app-id': 'com.kids.story'
+        }
+      });
+
+      logger.info(`Trial-aware subscription created for user ${userId}: ${response.data.data.subscriptionId}`);
+      return response.data.data; // Return the data object directly
+    } catch (error) {
+      logger.error('Trial-aware subscription creation failed:');
+      logger.error('Status:', error.response?.status);
+      logger.error('Data:', JSON.stringify(error.response?.data, null, 2));
+      logger.error('Headers:', error.response?.headers);
+      logger.error('Request URL:', error.config?.url);
+      logger.error('Request Data:', JSON.stringify(error.config?.data, null, 2));
+      throw error;
+    }
+  }
+
+  /**
    * Format phone number to meet payment microservice requirements
    * @param {string} phone - Phone number in any format
    * @returns {string} - Formatted phone number (10 digits starting with 6-9)

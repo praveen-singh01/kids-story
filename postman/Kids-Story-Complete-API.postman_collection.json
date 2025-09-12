@@ -1,8 +1,8 @@
 {
   "info": {
     "name": "Kids Story - Complete API Collection",
-    "description": "Complete API collection including all CRUD operations, admin endpoints, category management, explore endpoints, subscription management, payment processing, and comprehensive filtering functionality",
-    "version": "2.2.0",
+    "description": "Complete API collection including all CRUD operations, admin endpoints, category management, explore endpoints, subscription management with phone validation fix, payment processing, and comprehensive filtering functionality",
+    "version": "2.3.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [

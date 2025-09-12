@@ -30,6 +30,51 @@ const validateUserUpdate = [
     .withMessage('Please provide a valid email')
 ];
 
+const validateOnboarding = [
+  body('fullName')
+    .notEmpty()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Full name is required and must be between 2 and 100 characters'),
+  body('birthDate.day')
+    .isInt({ min: 1, max: 31 })
+    .withMessage('Birth day must be between 1 and 31'),
+  body('birthDate.month')
+    .isInt({ min: 1, max: 12 })
+    .withMessage('Birth month must be between 1 and 12'),
+  body('birthDate.year')
+    .isInt({ min: 1900, max: new Date().getFullYear() })
+    .withMessage(`Birth year must be between 1900 and ${new Date().getFullYear()}`),
+  body('phone')
+    .notEmpty()
+    .matches(/^[6-9]\d{9}$/)
+    .withMessage('Phone number is required and must be 10 digits starting with 6-9')
+];
+
+const validateOnboardingUpdate = [
+  body('fullName')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Full name must be between 2 and 100 characters'),
+  body('birthDate.day')
+    .optional()
+    .isInt({ min: 1, max: 31 })
+    .withMessage('Birth day must be between 1 and 31'),
+  body('birthDate.month')
+    .optional()
+    .isInt({ min: 1, max: 12 })
+    .withMessage('Birth month must be between 1 and 12'),
+  body('birthDate.year')
+    .optional()
+    .isInt({ min: 1900, max: new Date().getFullYear() })
+    .withMessage(`Birth year must be between 1900 and ${new Date().getFullYear()}`),
+  body('phone')
+    .optional()
+    .matches(/^[6-9]\d{9}$/)
+    .withMessage('Phone number must be 10 digits starting with 6-9')
+];
+
 // GET /users/me - Get current user profile
 router.get('/me', authenticate, async (req, res) => {
   try {
@@ -115,16 +160,165 @@ router.delete('/me', authenticate, async (req, res) => {
 router.get('/me/subscription', authenticate, async (req, res) => {
   try {
     const user = req.user;
-    
+
     res.success({
       subscription: user.subscription,
       plan: user.subscription?.plan || 'free',
       status: user.subscription?.status || 'active'
     }, 'Subscription details retrieved successfully');
-    
+
   } catch (error) {
     logger.error('Get subscription error:', error);
     res.status(500).error(['Failed to retrieve subscription details'], 'Internal server error');
+  }
+});
+
+// POST /users/me/onboarding - Complete user onboarding
+router.post('/me/onboarding', authenticate, validateOnboarding, handleValidationErrors, async (req, res) => {
+  try {
+    const { fullName, birthDate, phone } = req.body;
+    const userId = req.userId;
+
+    // Check if user is already onboarded
+    if (req.user.isOnboarded) {
+      return res.status(400).error(['User has already completed onboarding'], 'Onboarding failed');
+    }
+
+    // Validate birth date
+    const { day, month, year } = birthDate;
+    const birthDateObj = new Date(year, month - 1, day);
+
+    // Check if the date is valid
+    if (birthDateObj.getDate() !== day || birthDateObj.getMonth() !== month - 1 || birthDateObj.getFullYear() !== year) {
+      return res.status(400).error(['Invalid birth date'], 'Onboarding failed');
+    }
+
+    // Update user with onboarding data
+    const user = await User.findByIdAndUpdate(
+      userId,
+      {
+        fullName,
+        birthDate: { day, month, year },
+        phone,
+        isOnboarded: true
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!user) {
+      return res.status(404).error(['User not found'], 'Onboarding failed');
+    }
+
+    logger.info(`User onboarding completed: ${user.email}`);
+
+    res.success({
+      user,
+      isOnboarded: true
+    }, 'Onboarding completed successfully');
+
+  } catch (error) {
+    logger.error('Onboarding error:', error);
+
+    if (error.code === 11000) {
+      return res.status(409).error(['Phone number already exists'], 'Onboarding failed');
+    }
+
+    res.status(500).error(['Failed to complete onboarding'], 'Internal server error');
+  }
+});
+
+// GET /users/me/onboarding-status - Check if user has completed onboarding
+router.get('/me/onboarding-status', authenticate, async (req, res) => {
+  try {
+    const user = req.user;
+
+    res.success({
+      isOnboarded: user.isOnboarded || false,
+      hasFullName: !!user.fullName,
+      hasBirthDate: !!(user.birthDate && user.birthDate.day && user.birthDate.month && user.birthDate.year),
+      hasPhone: !!user.phone
+    }, 'Onboarding status retrieved successfully');
+
+  } catch (error) {
+    logger.error('Get onboarding status error:', error);
+    res.status(500).error(['Failed to retrieve onboarding status'], 'Internal server error');
+  }
+});
+
+// PUT /users/me/onboarding - Update user onboarding details
+router.put('/me/onboarding', authenticate, validateOnboardingUpdate, handleValidationErrors, async (req, res) => {
+  try {
+    const { fullName, birthDate, phone } = req.body;
+    const userId = req.userId;
+
+    // Check if user has completed onboarding
+    if (!req.user.isOnboarded) {
+      return res.status(400).error(['User must complete onboarding first'], 'Update failed');
+    }
+
+    const updateData = {};
+
+    // Update full name if provided
+    if (fullName !== undefined) {
+      updateData.fullName = fullName;
+    }
+
+    // Update birth date if provided (must provide all three fields)
+    if (birthDate) {
+      const { day, month, year } = birthDate;
+
+      // If any birth date field is provided, all must be provided
+      if (day !== undefined || month !== undefined || year !== undefined) {
+        if (day === undefined || month === undefined || year === undefined) {
+          return res.status(400).error(['Birth date must include day, month, and year'], 'Update failed');
+        }
+
+        // Validate birth date
+        const birthDateObj = new Date(year, month - 1, day);
+        if (birthDateObj.getDate() !== day || birthDateObj.getMonth() !== month - 1 || birthDateObj.getFullYear() !== year) {
+          return res.status(400).error(['Invalid birth date'], 'Update failed');
+        }
+
+        updateData.birthDate = { day, month, year };
+      }
+    }
+
+    // Update phone if provided
+    if (phone !== undefined) {
+      updateData.phone = phone;
+    }
+
+    // If no fields to update
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).error(['No valid fields provided for update'], 'Update failed');
+    }
+
+    // Update user
+    const user = await User.findByIdAndUpdate(
+      userId,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!user) {
+      return res.status(404).error(['User not found'], 'Update failed');
+    }
+
+    logger.info(`User onboarding details updated: ${user.email}`);
+
+    res.success({
+      user,
+      updated: Object.keys(updateData)
+    }, 'Onboarding details updated successfully');
+
+  } catch (error) {
+    logger.error('Update onboarding error:', error);
+
+    if (error.code === 11000) {
+      return res.status(409).error(['Phone number already exists'], 'Update failed');
+    }
+
+    res.status(500).error(['Failed to update onboarding details'], 'Internal server error');
   }
 });
 

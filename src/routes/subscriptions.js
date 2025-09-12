@@ -21,8 +21,8 @@ const handleValidationErrors = (req, res, next) => {
 const validateSubscriptionCreation = [
   body('planId')
     .notEmpty()
-    .isIn(['plan_kids_story_trial', 'plan_kids_story_monthly', 'plan_kids_story_yearly'])
-    .withMessage('Plan ID must be plan_kids_story_trial, plan_kids_story_monthly, or plan_kids_story_yearly'),
+    .isIn(['plan_QkkDaTp9Hje6uC', 'plan_QkkDw9QRHFT0nG', 'plan_RAeTVEtz6dFtPY', 'plan_RAeTumFCrDrT4X', 'plan_kids_story_trial', 'plan_kids_story_monthly', 'plan_kids_story_yearly'])
+    .withMessage('Plan ID must be a valid Razorpay plan ID (plan_QkkDaTp9Hje6uC for monthly, plan_QkkDw9QRHFT0nG for yearly)'),
   body('paymentContext')
     .optional()
     .isObject()
@@ -32,9 +32,25 @@ const validateSubscriptionCreation = [
 const validateSubscriptionUpdate = [
   body('planId')
     .optional()
-    .isIn(['plan_kids_story_trial', 'plan_kids_story_monthly', 'plan_kids_story_yearly'])
-    .withMessage('Plan ID must be plan_kids_story_trial, plan_kids_story_monthly, or plan_kids_story_yearly')
+    .isIn(['plan_QkkDaTp9Hje6uC', 'plan_QkkDw9QRHFTn', 'plan_kids_story_trial', 'plan_kids_story_monthly', 'plan_kids_story_yearly'])
+    .withMessage('Plan ID must be a valid Razorpay plan ID (plan_QkkDaTp9Hje6uC for monthly, plan_QkkDw9QRHFTn for yearly)')
 ];
+
+// Helper function to convert plan ID to plan type for trial-aware system
+const getPlanTypeFromPlanId = (planId) => {
+  const planMapping = {
+    // Unified plan IDs used across all backends
+    'plan_QkkDaTp9Hje6uC': 'monthly',
+    'plan_QkkDw9QRHFT0nG': 'yearly',
+    // Legacy Kids Story plan IDs (for backward compatibility)
+    'plan_RAeTVEtz6dFtPY': 'monthly',
+    'plan_RAeTumFCrDrT4X': 'yearly',
+    'plan_kids_story_monthly': 'monthly',
+    'plan_kids_story_yearly': 'yearly',
+    'plan_kids_story_trial': 'monthly' // Default to monthly for trial
+  };
+  return planMapping[planId] || 'monthly';
+};
 
 // GET /subscriptions/me - Get current user's subscription
 router.get('/me', authenticate, async (req, res) => {
@@ -86,7 +102,7 @@ router.get('/me', authenticate, async (req, res) => {
   }
 });
 
-// POST /subscriptions - Create a new subscription
+// POST /subscriptions - Create a new subscription with TRIAL SUPPORT
 router.post('/', authenticate, validateSubscriptionCreation, handleValidationErrors, async (req, res) => {
   try {
     const { planId, paymentContext = {} } = req.body;
@@ -98,6 +114,9 @@ router.post('/', authenticate, validateSubscriptionCreation, handleValidationErr
       return res.status(409).error(['User already has an active subscription'], 'Subscription creation failed');
     }
 
+    // Convert planId to planType for trial-aware system
+    const planType = getPlanTypeFromPlanId(planId);
+
     // Build enhanced payment context with user data
     const enhancedPaymentContext = {
       ...paymentContext,
@@ -107,20 +126,24 @@ router.post('/', authenticate, validateSubscriptionCreation, handleValidationErr
         userPhone: user.phone || paymentContext.metadata?.userPhone || '9999999999', // Use user phone or fallback
         userId: userId,
         packageId: 'com.kids.story',
+        planId: planId,
+        planType: planType,
         ...paymentContext.metadata // Allow override from request
       }
     };
 
-    logger.info('Creating subscription with context:', {
+    logger.info('Creating TRIAL-AWARE subscription with context:', {
       userId,
       planId,
+      planType,
       userEmail: user.email,
       userPhone: enhancedPaymentContext.metadata.userPhone,
       packageId: enhancedPaymentContext.metadata.packageId
     });
 
-    // Create subscription via payment microservice
-    const subscription = await paymentService.createSubscription(userId, planId, enhancedPaymentContext);
+    // Create subscription via payment microservice with TRIAL SUPPORT
+    const callbackOverride = process.env.PAYMENT_CALLBACK_OVERRIDE;
+    const subscription = await paymentService.createSubscriptionTrialAware(userId, planType, enhancedPaymentContext, callbackOverride);
 
     logger.info(`Subscription created for user ${userId}: ${subscription.subscriptionId}`);
 

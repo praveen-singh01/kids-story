@@ -93,6 +93,33 @@ const userSchema = new mongoose.Schema({
     type: String,
     sparse: true, // Allow null values but ensure uniqueness when present
     match: [/^[6-9]\d{9}$/, 'Please enter a valid Indian phone number (10 digits starting with 6-9)']
+  },
+  // Onboarding fields
+  fullName: {
+    type: String,
+    trim: true,
+    maxlength: 100
+  },
+  birthDate: {
+    day: {
+      type: Number,
+      min: 1,
+      max: 31
+    },
+    month: {
+      type: Number,
+      min: 1,
+      max: 12
+    },
+    year: {
+      type: Number,
+      min: 1900,
+      max: new Date().getFullYear()
+    }
+  },
+  isOnboarded: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true,
