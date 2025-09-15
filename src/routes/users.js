@@ -30,6 +30,8 @@ const validateUserUpdate = [
     .withMessage('Please provide a valid email')
 ];
 
+
+
 const validateOnboarding = [
   body('fullName')
     .notEmpty()
@@ -48,7 +50,16 @@ const validateOnboarding = [
   body('phone')
     .notEmpty()
     .matches(/^[6-9]\d{9}$/)
-    .withMessage('Phone number is required and must be 10 digits starting with 6-9')
+    .withMessage('Phone number is required and must be 10 digits starting with 6-9'),
+  body('language')
+    .optional()
+    .isIn(['en', 'hi'])
+    .withMessage('Language must be either "en" or "hi"'),
+  body('avatarId')
+    .optional()
+    .isString()
+    .trim()
+    .withMessage('Avatar ID must be a string')
 ];
 
 const validateOnboardingUpdate = [
@@ -72,7 +83,16 @@ const validateOnboardingUpdate = [
   body('phone')
     .optional()
     .matches(/^[6-9]\d{9}$/)
-    .withMessage('Phone number must be 10 digits starting with 6-9')
+    .withMessage('Phone number must be 10 digits starting with 6-9'),
+  body('language')
+    .optional()
+    .isIn(['en', 'hi'])
+    .withMessage('Language must be either "en" or "hi"'),
+  body('avatarId')
+    .optional()
+    .isString()
+    .trim()
+    .withMessage('Avatar ID must be a string')
 ];
 
 // GET /users/me - Get current user profile
@@ -80,9 +100,18 @@ router.get('/me', authenticate, async (req, res) => {
   try {
     // User is already attached to req by authenticate middleware
     const user = req.user;
-    
-    res.success(user, 'User profile retrieved successfully');
-    
+
+    // Ensure preferences object exists with default values
+    const userResponse = {
+      ...user.toJSON(),
+      preferences: {
+        language: user.preferences?.language || 'en'
+      },
+      avatarId: user.avatarId || null
+    };
+
+    res.success(userResponse, 'User profile retrieved successfully');
+
   } catch (error) {
     logger.error('Get user profile error:', error);
     res.status(500).error(['Failed to retrieve user profile'], 'Internal server error');
@@ -94,38 +123,47 @@ router.patch('/me', authenticate, validateUserUpdate, handleValidationErrors, as
   try {
     const { name, email } = req.body;
     const userId = req.userId;
-    
+
     const updateData = {};
     if (name) updateData.name = name;
     if (email) updateData.email = email;
-    
+
     // If email is being updated, mark as unverified for email provider users
     if (email && req.user.provider === 'email') {
       updateData.emailVerified = false;
       // In a real app, you'd generate a new verification token here
     }
-    
+
     const user = await User.findByIdAndUpdate(
       userId,
       updateData,
       { new: true, runValidators: true }
     );
-    
+
     if (!user) {
       return res.status(404).error(['User not found'], 'Update failed');
     }
-    
+
     logger.info(`User profile updated: ${user.email}`);
-    
-    res.success(user, 'User profile updated successfully');
-    
+
+    // Return updated user data with preferences
+    const userResponse = {
+      ...user.toJSON(),
+      preferences: {
+        language: user.preferences?.language || 'en'
+      },
+      avatarId: user.avatarId || null
+    };
+
+    res.success(userResponse, 'User profile updated successfully');
+
   } catch (error) {
     logger.error('Update user profile error:', error);
-    
+
     if (error.code === 11000) {
       return res.status(409).error(['Email already exists'], 'Update failed');
     }
-    
+
     res.status(500).error(['Failed to update user profile'], 'Internal server error');
   }
 });
@@ -176,7 +214,7 @@ router.get('/me/subscription', authenticate, async (req, res) => {
 // POST /users/me/onboarding - Complete user onboarding
 router.post('/me/onboarding', authenticate, validateOnboarding, handleValidationErrors, async (req, res) => {
   try {
-    const { fullName, birthDate, phone } = req.body;
+    const { fullName, birthDate, phone, language, avatarId } = req.body;
     const userId = req.userId;
 
     // Check if user is already onboarded
@@ -193,15 +231,28 @@ router.post('/me/onboarding', authenticate, validateOnboarding, handleValidation
       return res.status(400).error(['Invalid birth date'], 'Onboarding failed');
     }
 
+    // Prepare update data
+    const updateData = {
+      fullName,
+      birthDate: { day, month, year },
+      phone,
+      isOnboarded: true
+    };
+
+    // Add language preference if provided
+    if (language) {
+      updateData['preferences.language'] = language;
+    }
+
+    // Add avatar ID if provided
+    if (avatarId) {
+      updateData.avatarId = avatarId;
+    }
+
     // Update user with onboarding data
     const user = await User.findByIdAndUpdate(
       userId,
-      {
-        fullName,
-        birthDate: { day, month, year },
-        phone,
-        isOnboarded: true
-      },
+      updateData,
       { new: true, runValidators: true }
     );
 
@@ -211,8 +262,17 @@ router.post('/me/onboarding', authenticate, validateOnboarding, handleValidation
 
     logger.info(`User onboarding completed: ${user.email}`);
 
+    // Return updated user data with preferences
+    const userResponse = {
+      ...user.toJSON(),
+      preferences: {
+        language: user.preferences?.language || 'en'
+      },
+      avatarId: user.avatarId || null
+    };
+
     res.success({
-      user,
+      user: userResponse,
       isOnboarded: true
     }, 'Onboarding completed successfully');
 
@@ -248,7 +308,7 @@ router.get('/me/onboarding-status', authenticate, async (req, res) => {
 // PUT /users/me/onboarding - Update user onboarding details
 router.put('/me/onboarding', authenticate, validateOnboardingUpdate, handleValidationErrors, async (req, res) => {
   try {
-    const { fullName, birthDate, phone } = req.body;
+    const { fullName, birthDate, phone, language, avatarId } = req.body;
     const userId = req.userId;
 
     // Check if user has completed onboarding
@@ -288,6 +348,16 @@ router.put('/me/onboarding', authenticate, validateOnboardingUpdate, handleValid
       updateData.phone = phone;
     }
 
+    // Update language preference if provided
+    if (language !== undefined) {
+      updateData['preferences.language'] = language;
+    }
+
+    // Update avatar ID if provided
+    if (avatarId !== undefined) {
+      updateData.avatarId = avatarId;
+    }
+
     // If no fields to update
     if (Object.keys(updateData).length === 0) {
       return res.status(400).error(['No valid fields provided for update'], 'Update failed');
@@ -306,8 +376,17 @@ router.put('/me/onboarding', authenticate, validateOnboardingUpdate, handleValid
 
     logger.info(`User onboarding details updated: ${user.email}`);
 
+    // Return updated user data with preferences
+    const userResponse = {
+      ...user.toJSON(),
+      preferences: {
+        language: user.preferences?.language || 'en'
+      },
+      avatarId: user.avatarId || null
+    };
+
     res.success({
-      user,
+      user: userResponse,
       updated: Object.keys(updateData)
     }, 'Onboarding details updated successfully');
 

@@ -120,6 +120,19 @@ const userSchema = new mongoose.Schema({
   isOnboarded: {
     type: Boolean,
     default: false
+  },
+  // User preferences
+  preferences: {
+    language: {
+      type: String,
+      enum: ['en', 'hi'],
+      default: 'en'
+    }
+  },
+  // Avatar selection
+  avatarId: {
+    type: String,
+    default: null
   }
 }, {
   timestamps: true,

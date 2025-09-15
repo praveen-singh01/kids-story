@@ -102,9 +102,6 @@ The onboarding API allows users to complete their profile setup by providing add
 }
 ```
 
-
-```
-
 **409 Conflict - Phone Number Exists**
 ```json
 {
@@ -333,14 +330,7 @@ const validateOnboardingForm = (formData) => {
   if (birthDate.getDate() !== day || birthDate.getMonth() !== month - 1) {
     errors.push('Please enter a valid birth date');
   }
-  
-  // Check age (at least 3 years old)
-  const today = new Date();
-  const age = today.getFullYear() - year;
-  if (age < 3) {
-    errors.push('User must be at least 3 years old');
-  }
-  
+
   // Validate phone number
   const phoneRegex = /^[6-9]\d{9}$/;
   if (!phoneRegex.test(formData.phone)) {
@@ -349,6 +339,62 @@ const validateOnboardingForm = (formData) => {
   
   return errors;
 };
+```
+
+### 4. Update Onboarding Details
+
+```javascript
+const updateOnboardingDetails = async (updateData) => {
+  try {
+    const response = await fetch('/api/v1/users/me/onboarding', {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(updateData)
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      console.log('Onboarding details updated:', data.data.user);
+      console.log('Updated fields:', data.data.updated);
+      return data.data.user;
+    } else {
+      console.error('Update failed:', data.error);
+      showErrorMessage(data.error.join(', '));
+    }
+  } catch (error) {
+    console.error('Failed to update onboarding details:', error);
+    showErrorMessage('Failed to update details. Please try again.');
+  }
+};
+
+// Example: Update only full name
+await updateOnboardingDetails({
+  fullName: 'New Full Name'
+});
+
+// Example: Update only phone number
+await updateOnboardingDetails({
+  phone: '9876543210'
+});
+
+// Example: Update birth date (must include all three fields)
+await updateOnboardingDetails({
+  birthDate: {
+    day: 15,
+    month: 8,
+    year: 2020
+  }
+});
+
+// Example: Update multiple fields
+await updateOnboardingDetails({
+  fullName: 'Updated Name',
+  phone: '9123456789'
+});
 ```
 
 ## Testing
@@ -405,11 +451,11 @@ isOnboarded: {
 ## Security Considerations
 
 1. **Authentication Required**: All onboarding endpoints require valid JWT authentication
-2. **One-time Onboarding**: Users can only complete onboarding once
+2. **One-time Onboarding**: Users can only complete onboarding once (but can update details later)
 3. **Phone Number Uniqueness**: Phone numbers must be unique across all users
-4. **Age Validation**: Minimum age requirement of 3 years for safety
-5. **Input Validation**: All inputs are validated and sanitized
-6. **Rate Limiting**: Standard rate limiting applies to prevent abuse
+4. **Input Validation**: All inputs are validated and sanitized
+5. **Rate Limiting**: Standard rate limiting applies to prevent abuse
+6. **Partial Updates**: PUT endpoint allows updating individual fields without affecting others
 
 ## Error Handling
 

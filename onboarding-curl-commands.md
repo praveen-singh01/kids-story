@@ -154,6 +154,88 @@ curl -X POST http://localhost:3000/api/v1/users/me/onboarding \
 }
 ```
 
+## Step 6: Update Onboarding Details (PUT)
+
+### Full Update
+
+```bash
+# Replace YOUR_ACCESS_TOKEN with the token from Step 1
+curl -X PUT http://localhost:3000/api/v1/users/me/onboarding \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fullName": "Updated Full Name",
+    "birthDate": {
+      "day": 25,
+      "month": 12,
+      "year": 2019
+    },
+    "phone": "9123456789"
+  }'
+```
+
+### Partial Update (Only Full Name)
+
+```bash
+curl -X PUT http://localhost:3000/api/v1/users/me/onboarding \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fullName": "Partially Updated Name"
+  }'
+```
+
+### Update Only Phone Number
+
+```bash
+curl -X PUT http://localhost:3000/api/v1/users/me/onboarding \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone": "9999888777"
+  }'
+```
+
+### Update Only Birth Date
+
+```bash
+curl -X PUT http://localhost:3000/api/v1/users/me/onboarding \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "birthDate": {
+      "day": 1,
+      "month": 1,
+      "year": 2021
+    }
+  }'
+```
+
+**Expected Response for PUT requests:**
+```json
+{
+  "success": true,
+  "message": "Onboarding details updated successfully",
+  "data": {
+    "user": {
+      "id": "user_id",
+      "email": "test.onboarding@example.com",
+      "name": "Test User",
+      "fullName": "Updated Full Name",
+      "birthDate": {
+        "day": 25,
+        "month": 12,
+        "year": 2019
+      },
+      "phone": "9123456789",
+      "isOnboarded": true,
+      ...
+    },
+    "updated": ["fullName", "birthDate", "phone"]
+  }
+}
+```
+
 ## Error Testing Examples
 
 ### Invalid Birth Date (Day > 31)
@@ -314,6 +396,78 @@ curl -X POST http://localhost:3000/api/v1/users/me/onboarding \
 }
 ```
 
+### PUT Endpoint Error Testing
+
+#### Empty Update (Should Fail)
+
+```bash
+curl -X PUT http://localhost:3000/api/v1/users/me/onboarding \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+**Expected Response (Error):**
+```json
+{
+  "success": false,
+  "error": ["No valid fields provided for update"],
+  "message": "Update failed"
+}
+```
+
+#### Incomplete Birth Date (Should Fail)
+
+```bash
+curl -X PUT http://localhost:3000/api/v1/users/me/onboarding \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "birthDate": {
+      "day": 15
+    }
+  }'
+```
+
+**Expected Response (Error):**
+```json
+{
+  "success": false,
+  "error": ["Birth date must include day, month, and year"],
+  "message": "Update failed"
+}
+```
+
+#### Update Without Onboarding (Should Fail)
+
+```bash
+# First register a new user without completing onboarding
+curl -X POST http://localhost:3000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "not.onboarded@example.com",
+    "password": "testpassword123",
+    "name": "Not Onboarded User"
+  }'
+
+# Then try to update (use the token from registration response)
+curl -X PUT http://localhost:3000/api/v1/users/me/onboarding \
+  -H "Authorization: Bearer NEW_USER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fullName": "Should Fail"
+  }'
+```
+
+**Expected Response (Error):**
+```json
+{
+  "success": false,
+  "error": ["User must complete onboarding first"],
+  "message": "Update failed"
+}
+```
+
 ## Notes
 
 1. Replace `YOUR_ACCESS_TOKEN` with the actual JWT token received from registration/login
@@ -322,4 +476,6 @@ curl -X POST http://localhost:3000/api/v1/users/me/onboarding \
 4. The server must be running on `http://localhost:3000` (or update the URL accordingly)
 5. All timestamps in responses are in ISO 8601 format
 6. Birth dates are validated to ensure they represent valid calendar dates
-7. Users must be at least 3 years old to complete onboarding
+7. No age restrictions are enforced - users can enter any valid birth date
+8. PUT endpoint allows partial updates - only provided fields will be updated
+9. When updating birth date via PUT, all three fields (day, month, year) must be provided together
