@@ -37,6 +37,13 @@ class PaymentServiceClient {
   }
 
   /**
+   * Generate JWT token for API calls (alias for compatibility)
+   */
+  generateJWT(userId) {
+    return this.generateToken(userId);
+  }
+
+  /**
    * Get headers for API requests
    */
   getHeaders(userId) {
@@ -216,6 +223,55 @@ class PaymentServiceClient {
     } catch (error) {
       logger.error('Get subscriptions failed:', error.response?.data || error.message);
       throw error;
+    }
+  }
+
+  /**
+   * Check trial eligibility for a user
+   */
+  async checkTrialEligibility(userId, packageId) {
+    try {
+      console.log('Checking trial eligibility via payment microservice', {
+        userId,
+        packageId,
+        baseUrl: this.baseUrl
+      });
+
+      const response = await axios.get('/api/payment/trial-eligibility', {
+        baseURL: this.baseUrl,
+        params: { packageName: packageId },
+        headers: this.getHeaders(userId)
+      });
+
+      console.log('Trial eligibility check successful', {
+        userId,
+        packageId,
+        canUseTrial: response.data.data?.canUseTrial,
+        hasExistingSubscription: response.data.data?.hasExistingSubscription
+      });
+
+      // Transform response to match expected format
+      return {
+        success: response.data.success,
+        data: {
+          isTrialEligible: response.data.data?.canUseTrial || false,
+          trialUsed: !response.data.data?.canUseTrial || false,
+          hasExistingSubscription: response.data.data?.hasExistingSubscription || false
+        }
+      };
+    } catch (error) {
+      console.warn('Trial eligibility check failed:', error.message);
+      console.error('Trial eligibility error details:', error.response?.data || error);
+
+      // Return default response on error
+      return {
+        success: false,
+        data: {
+          isTrialEligible: false,
+          trialUsed: true,
+          hasExistingSubscription: false
+        }
+      };
     }
   }
 

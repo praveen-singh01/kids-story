@@ -21,8 +21,8 @@ const handleValidationErrors = (req, res, next) => {
 const validateSubscriptionCreation = [
   body('planId')
     .notEmpty()
-    .isIn(['plan_QkkDaTp9Hje6uC', 'plan_QkkDw9QRHFT0nG', 'plan_RAeTVEtz6dFtPY', 'plan_RAeTumFCrDrT4X', 'plan_kids_story_trial', 'plan_kids_story_monthly', 'plan_kids_story_yearly'])
-    .withMessage('Plan ID must be a valid Razorpay plan ID (plan_QkkDaTp9Hje6uC for monthly, plan_QkkDw9QRHFT0nG for yearly)'),
+    .isIn(['plan_RAeTVEtz6dFtPY', 'plan_RAeTumFCrDrT4X', 'plan_kids_story_trial', 'plan_kids_story_monthly', 'plan_kids_story_yearly'])
+    .withMessage('Plan ID must be a valid Razorpay plan ID (plan_RAeTVEtz6dFtPY for monthly, plan_RAeTumFCrDrT4X for yearly)'),
   body('paymentContext')
     .optional()
     .isObject()
@@ -32,17 +32,14 @@ const validateSubscriptionCreation = [
 const validateSubscriptionUpdate = [
   body('planId')
     .optional()
-    .isIn(['plan_QkkDaTp9Hje6uC', 'plan_QkkDw9QRHFTn', 'plan_kids_story_trial', 'plan_kids_story_monthly', 'plan_kids_story_yearly'])
-    .withMessage('Plan ID must be a valid Razorpay plan ID (plan_QkkDaTp9Hje6uC for monthly, plan_QkkDw9QRHFTn for yearly)')
+    .isIn(['plan_RAeTVEtz6dFtPY', 'plan_RAeTumFCrDrT4X', 'plan_kids_story_trial', 'plan_kids_story_monthly', 'plan_kids_story_yearly'])
+    .withMessage('Plan ID must be a valid Razorpay plan ID (plan_RAeTVEtz6dFtPY for monthly, plan_RAeTumFCrDrT4X for yearly)')
 ];
 
 // Helper function to convert plan ID to plan type for trial-aware system
 const getPlanTypeFromPlanId = (planId) => {
   const planMapping = {
-    // Unified plan IDs used across all backends
-    'plan_QkkDaTp9Hje6uC': 'monthly',
-    'plan_QkkDw9QRHFT0nG': 'yearly',
-    // Legacy Kids Story plan IDs (for backward compatibility)
+    // Kids Story specific plan IDs
     'plan_RAeTVEtz6dFtPY': 'monthly',
     'plan_RAeTumFCrDrT4X': 'yearly',
     'plan_kids_story_monthly': 'monthly',
@@ -219,43 +216,60 @@ router.post('/me/cancel', authenticate, async (req, res) => {
   }
 });
 
-// GET /subscriptions/plans - Get available subscription plans
-router.get('/plans', async (req, res) => {
+// GET /subscriptions/plans - Get available subscription plans (TRIAL-AWARE)
+router.get('/plans', authenticate, async (req, res) => {
   try {
-    // Updated plans to match the payment microservice configuration
-    const plans = [
+    const userId = req.userId;
+    const packageId = 'com.kids.story';
+
+    // Check if payment microservice is enabled
+    const isMicroserviceEnabled = () => {
+      return process.env.USE_PAYMENT_MICROSERVICE === 'true' &&
+             process.env.PAYMENT_MICROSERVICE_URL &&
+             process.env.PAYMENT_JWT_SECRET;
+    };
+
+    let trialEligible = false;
+
+    // Check trial eligibility via payment microservice
+    if (isMicroserviceEnabled()) {
+      try {
+        console.log('Checking trial eligibility for user:', {
+          userId,
+          packageId,
+          microserviceEnabled: isMicroserviceEnabled()
+        });
+
+        const trialEligibilityResult = await paymentService.checkTrialEligibility(userId, packageId);
+        trialEligible = trialEligibilityResult.success && trialEligibilityResult.data?.isTrialEligible;
+
+        console.log('Trial eligibility check result:', {
+          userId,
+          packageId,
+          trialEligible,
+          trialUsed: trialEligibilityResult.data?.trialUsed,
+          fullResponse: trialEligibilityResult
+        });
+      } catch (error) {
+        console.warn('Failed to check trial eligibility:', error.message);
+        console.error('Trial eligibility error details:', error);
+        trialEligible = false;
+      }
+    } else {
+      console.log('Payment microservice is disabled, skipping trial eligibility check');
+    }
+
+    // Define all plan configurations with Kids Story specific plan IDs
+    const allPlanConfigs = [
       {
-        id: 'free',
-        name: 'Free Plan',
-        price: 0,
-        currency: 'INR',
-        interval: 'month',
-        features: [
-          'Access to basic stories',
-          'Limited content library',
-          'Standard audio quality'
-        ]
-      },
-      {
-        id: 'plan_kids_story_trial',
-        name: 'Trial Plan',
-        price: 1,
-        currency: 'INR',
-        interval: 'week',
-        billingCycle: '7 days',
-        features: [
-          'Access to all stories',
-          'Full content library',
-          'High-quality audio',
-          '7-day trial period'
-        ]
-      },
-      {
-        id: 'plan_kids_story_monthly',
+        id: 'plan_RAeTVEtz6dFtPY',
         name: 'Monthly Plan',
         price: 99,
+        priceAfterTax: 117,
         currency: 'INR',
         interval: 'month',
+        validityInDays: 30,
+        plan: 'monthly',
         features: [
           'Access to all stories',
           'Full content library',
@@ -266,11 +280,14 @@ router.get('/plans', async (req, res) => {
         ]
       },
       {
-        id: 'plan_kids_story_yearly',
+        id: 'plan_RAeTumFCrDrT4X',
         name: 'Yearly Plan',
         price: 499,
+        priceAfterTax: 587,
         currency: 'INR',
         interval: 'year',
+        validityInDays: 365,
+        plan: 'yearly',
         features: [
           'Access to all stories',
           'Full content library',
@@ -284,7 +301,33 @@ router.get('/plans', async (req, res) => {
       }
     ];
 
-    res.success(plans, 'Subscription plans retrieved successfully');
+    let subscriptionList;
+
+    if (trialEligible) {
+      // Trial eligible users: show only monthly plan with trial option
+      console.log('Trial eligible user - showing only monthly plan with trial option');
+      subscriptionList = allPlanConfigs
+        .filter(config => config.plan === 'monthly')
+        .map(config => ({
+          ...config,
+          freeTrial: true,
+          trialPrice: 3 // ₹3 trial
+        }));
+    } else {
+      // Non-trial eligible users: show both plans without trial
+      console.log('Non-trial eligible user - showing both monthly and yearly plans');
+      subscriptionList = allPlanConfigs.map(config => ({
+        ...config,
+        freeTrial: false,
+        trialPrice: 0
+      }));
+    }
+
+    res.success({
+      subscriptionList,
+      trialEligible,
+      apiKey: process.env.RAZORPAY_KEY_ID || 'rzp_live_EWIcFTdUd0CymA'
+    }, 'Subscription plans retrieved successfully');
 
   } catch (error) {
     logger.error('Get plans error:', error);
