@@ -108,16 +108,17 @@ router.get('/',
         subscription
       } = req.query;
 
-      // Build filter query
-      const filter = {};
-      
+      // Build filter query - default to showing only active users
+      const filter = { isActive: true };
+
       if (search) {
         filter.$or = [
           { name: { $regex: search, $options: 'i' } },
           { email: { $regex: search, $options: 'i' } }
         ];
       }
-      
+
+      // Allow explicit filtering by status (can override default)
       if (status) {
         filter.isActive = status === 'active';
       }

@@ -114,20 +114,21 @@ router.get('/',
         isActive
       } = req.query;
 
-      // Build filter query
-      const filter = {};
-      
+      // Build filter query - default to showing only active categories
+      const filter = { isActive: true };
+
       if (search) {
         filter.$or = [
           { name: { $regex: search, $options: 'i' } },
           { description: { $regex: search, $options: 'i' } }
         ];
       }
-      
+
       if (parentId !== undefined) {
         filter.parentId = parentId === 'null' ? null : parentId;
       }
-      
+
+      // Allow explicit filtering by isActive (can override default)
       if (typeof isActive === 'boolean') {
         filter.isActive = isActive;
       }
