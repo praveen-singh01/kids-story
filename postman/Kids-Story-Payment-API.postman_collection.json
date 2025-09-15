@@ -1,19 +1,9 @@
 {
   "info": {
-    "name": "Kids Story API - Bilingual Support",
-    "description": "Complete API collection for Kids Story app with bilingual content support (English & Hindi), payment integration, and all core features",
-    "version": "2.0.0",
+    "name": "Kids Story - Complete API Collection (Updated)",
+    "description": "Complete and updated API collection for Kids Story backend including all endpoints: Authentication, User Management, Kid Profiles, Content Management, Categories, Avatars, Explore, Favorites, Progress, Subscriptions, Payment, Admin Operations, and Health checks",
+    "version": "3.0.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{auth_token}}",
-        "type": "string"
-      }
-    ]
   },
   "variable": [
     {
@@ -23,6 +13,11 @@
     },
     {
       "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
       "value": "",
       "type": "string"
     },
@@ -40,11 +35,61 @@
       "key": "content_id",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "content_slug",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "category_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "favorite_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "subscription_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "plan_id_trial",
+      "value": "plan_kids_story_trial",
+      "type": "string"
+    },
+    {
+      "key": "plan_id_monthly",
+      "value": "plan_kids_story_monthly",
+      "type": "string"
+    },
+    {
+      "key": "plan_id_yearly",
+      "value": "plan_kids_story_yearly",
+      "type": "string"
     }
   ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
   "item": [
     {
-      "name": "Authentication",
+      "name": "🔐 Authentication",
       "item": [
         {
           "name": "Register with Email",
@@ -58,7 +103,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"Test User\"\n}"
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"Test User\",\n  \"phone\": \"+919999999999\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/register",
@@ -66,7 +111,26 @@
               "path": ["auth", "register"]
             }
           },
-          "response": []
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data.accessToken) {",
+                  "        pm.collectionVariables.set('auth_token', response.data.accessToken);",
+                  "        console.log('Auth token saved:', response.data.accessToken.substring(0, 20) + '...');",
+                  "    }",
+                  "    if (response.data.user && response.data.user._id) {",
+                  "        pm.collectionVariables.set('user_id', response.data.user._id);",
+                  "        console.log('User ID saved:', response.data.user._id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Login with Email",
@@ -88,7 +152,26 @@
               "path": ["auth", "login"]
             }
           },
-          "response": []
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data.accessToken) {",
+                  "        pm.collectionVariables.set('auth_token', response.data.accessToken);",
+                  "        console.log('Auth token saved:', response.data.accessToken.substring(0, 20) + '...');",
+                  "    }",
+                  "    if (response.data.user && response.data.user._id) {",
+                  "        pm.collectionVariables.set('user_id', response.data.user._id);",
+                  "        console.log('User ID saved:', response.data.user._id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Google OAuth Login",
@@ -102,7 +185,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"idToken\": \"GOOGLE_ID_TOKEN_HERE\"\n}"
+              "raw": "{\n  \"idToken\": \"your_google_id_token_here\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/google",
@@ -110,7 +193,47 @@
               "path": ["auth", "google"]
             }
           },
-          "response": []
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data.accessToken) {",
+                  "        pm.collectionVariables.set('auth_token', response.data.accessToken);",
+                  "        console.log('Auth token saved:', response.data.accessToken.substring(0, 20) + '...');",
+                  "    }",
+                  "    if (response.data.user && response.data.user._id) {",
+                  "        pm.collectionVariables.set('user_id', response.data.user._id);",
+                  "        console.log('User ID saved:', response.data.user._id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"email_verification_token_here\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/verify-email",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "verify-email"]
+            }
+          }
         },
         {
           "name": "Refresh Token",
@@ -124,23 +247,22 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"refreshToken\": \"REFRESH_TOKEN_HERE\"\n}"
+              "raw": "{\n  \"refreshToken\": \"your_refresh_token_here\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/refresh",
               "host": ["{{base_url}}"],
               "path": ["auth", "refresh"]
             }
-          },
-          "response": []
+          }
         }
       ]
     },
     {
-      "name": "User Management",
+      "name": "👤 User Management",
       "item": [
         {
-          "name": "Get Current User",
+          "name": "Get Current User Profile",
           "request": {
             "method": "GET",
             "header": [],
@@ -149,8 +271,7 @@
               "host": ["{{base_url}}"],
               "path": ["users", "me"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Update User Profile",
@@ -171,8 +292,19 @@
               "host": ["{{base_url}}"],
               "path": ["users", "me"]
             }
-          },
-          "response": []
+          }
+        },
+        {
+          "name": "Get User Subscription",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users/me/subscription",
+              "host": ["{{base_url}}"],
+              "path": ["users", "me", "subscription"]
+            }
+          }
         },
         {
           "name": "Delete User Account",
@@ -184,13 +316,12 @@
               "host": ["{{base_url}}"],
               "path": ["users", "me"]
             }
-          },
-          "response": []
+          }
         }
       ]
     },
     {
-      "name": "Kid Profiles",
+      "name": "👶 Kid Profiles",
       "item": [
         {
           "name": "List Kid Profiles",
@@ -203,7 +334,22 @@
               "path": ["kids"]
             }
           },
-          "response": []
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.length > 0) {",
+                  "        pm.collectionVariables.set('kid_id', response.data[0]._id);",
+                  "        console.log('Kid ID saved:', response.data[0]._id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Create Kid Profile",
@@ -225,7 +371,22 @@
               "path": ["kids"]
             }
           },
-          "response": []
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data._id) {",
+                  "        pm.collectionVariables.set('kid_id', response.data._id);",
+                  "        console.log('Kid ID saved:', response.data._id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Get Kid Profile",
@@ -237,8 +398,7 @@
               "host": ["{{base_url}}"],
               "path": ["kids", "{{kid_id}}"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Update Kid Profile",
@@ -259,8 +419,7 @@
               "host": ["{{base_url}}"],
               "path": ["kids", "{{kid_id}}"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Delete Kid Profile",
@@ -272,13 +431,12 @@
               "host": ["{{base_url}}"],
               "path": ["kids", "{{kid_id}}"]
             }
-          },
-          "response": []
+          }
         }
       ]
     },
     {
-      "name": "Content",
+      "name": "📚 Content Management",
       "item": [
         {
           "name": "List Content",
@@ -286,18 +444,10 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/content?ageRange=6-8&type=story&limit=20&offset=0&language=en",
+              "raw": "{{base_url}}/content?limit=20&offset=0&language=en",
               "host": ["{{base_url}}"],
               "path": ["content"],
               "query": [
-                {
-                  "key": "ageRange",
-                  "value": "6-8"
-                },
-                {
-                  "key": "type",
-                  "value": "story"
-                },
                 {
                   "key": "limit",
                   "value": "20"
@@ -308,49 +458,59 @@
                 },
                 {
                   "key": "language",
-                  "value": "en",
-                  "description": "Language code (en for English, hi for Hindi)"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "List Content (Hindi)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/content?ageRange=6-8&type=story&limit=20&offset=0&language=hi",
-              "host": ["{{base_url}}"],
-              "path": ["content"],
-              "query": [
+                  "value": "en"
+                },
                 {
                   "key": "ageRange",
-                  "value": "6-8"
+                  "value": "6-8",
+                  "disabled": true
                 },
                 {
                   "key": "type",
-                  "value": "story"
+                  "value": "story",
+                  "disabled": true
                 },
                 {
-                  "key": "limit",
-                  "value": "20"
+                  "key": "category",
+                  "value": "{{category_id}}",
+                  "disabled": true
                 },
                 {
-                  "key": "offset",
-                  "value": "0"
+                  "key": "tags",
+                  "value": "bedtime,adventure",
+                  "disabled": true
                 },
                 {
-                  "key": "language",
-                  "value": "hi",
-                  "description": "Language code (en for English, hi for Hindi)"
+                  "key": "newcollection",
+                  "value": "true",
+                  "disabled": true
+                },
+                {
+                  "key": "trendingnow",
+                  "value": "true",
+                  "disabled": true
                 }
               ]
             }
           },
-          "response": []
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data.content && response.data.content.length > 0) {",
+                  "        pm.collectionVariables.set('content_id', response.data.content[0].id);",
+                  "        pm.collectionVariables.set('content_slug', response.data.content[0].slug);",
+                  "        console.log('Content ID saved:', response.data.content[0].id);",
+                  "        console.log('Content slug saved:', response.data.content[0].slug);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Search Content",
@@ -358,14 +518,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/content/search?query=buddha&limit=10&language=en",
+              "raw": "{{base_url}}/content/search?query=story&limit=10&language=en",
               "host": ["{{base_url}}"],
               "path": ["content", "search"],
               "query": [
                 {
                   "key": "query",
-                  "value": "buddha",
-                  "description": "Search query string"
+                  "value": "story"
                 },
                 {
                   "key": "limit",
@@ -373,42 +532,11 @@
                 },
                 {
                   "key": "language",
-                  "value": "en",
-                  "description": "Language code (en for English, hi for Hindi)"
+                  "value": "en"
                 }
               ]
             }
-          },
-          "response": []
-        },
-        {
-          "name": "Search Content (Hindi)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/content/search?query=बुद्ध&limit=10&language=hi",
-              "host": ["{{base_url}}"],
-              "path": ["content", "search"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "बुद्ध",
-                  "description": "Search query string in Hindi"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                },
-                {
-                  "key": "language",
-                  "value": "hi",
-                  "description": "Language code (en for English, hi for Hindi)"
-                }
-              ]
-            }
-          },
-          "response": []
+          }
         },
         {
           "name": "Get Featured Content",
@@ -426,37 +554,23 @@
                 },
                 {
                   "key": "language",
-                  "value": "en",
-                  "description": "Language code (en for English, hi for Hindi)"
+                  "value": "en"
                 }
               ]
             }
-          },
-          "response": []
+          }
         },
         {
-          "name": "Get Featured Content (Hindi)",
+          "name": "Get Available Languages",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/content/featured?limit=10&language=hi",
+              "raw": "{{base_url}}/content/languages",
               "host": ["{{base_url}}"],
-              "path": ["content", "featured"],
-              "query": [
-                {
-                  "key": "limit",
-                  "value": "10"
-                },
-                {
-                  "key": "language",
-                  "value": "hi",
-                  "description": "Language code (en for English, hi for Hindi)"
-                }
-              ]
+              "path": ["content", "languages"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Get Content by Slug",
@@ -464,39 +578,17 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/content/buddha-and-angulimala?language=en",
+              "raw": "{{base_url}}/content/{{content_slug}}?language=en",
               "host": ["{{base_url}}"],
-              "path": ["content", "buddha-and-angulimala"],
+              "path": ["content", "{{content_slug}}"],
               "query": [
                 {
                   "key": "language",
-                  "value": "en",
-                  "description": "Language code (en for English, hi for Hindi)"
+                  "value": "en"
                 }
               ]
             }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Content by Slug (Hindi)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/content/buddha-and-angulimala?language=hi",
-              "host": ["{{base_url}}"],
-              "path": ["content", "buddha-and-angulimala"],
-              "query": [
-                {
-                  "key": "language",
-                  "value": "hi",
-                  "description": "Language code (en for English, hi for Hindi)"
-                }
-              ]
-            }
-          },
-          "response": []
+          }
         },
         {
           "name": "Get Content by Type",
@@ -522,63 +614,99 @@
                 },
                 {
                   "key": "language",
-                  "value": "en",
-                  "description": "Language code (en for English, hi for Hindi)"
+                  "value": "en"
                 }
               ]
             }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Content by Type (Hindi)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/content/type/story?limit=20&offset=0&ageRange=6-8&language=hi",
-              "host": ["{{base_url}}"],
-              "path": ["content", "type", "story"],
-              "query": [
-                {
-                  "key": "limit",
-                  "value": "20"
-                },
-                {
-                  "key": "offset",
-                  "value": "0"
-                },
-                {
-                  "key": "ageRange",
-                  "value": "6-8"
-                },
-                {
-                  "key": "language",
-                  "value": "hi",
-                  "description": "Language code (en for English, hi for Hindi)"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Available Languages",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/content/languages",
-              "host": ["{{base_url}}"],
-              "path": ["content", "languages"]
-            }
-          },
-          "response": []
+          }
         }
       ]
     },
     {
-      "name": "Avatars",
+      "name": "🏷️ Categories",
+      "item": [
+        {
+          "name": "List Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categories?limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["categories"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.length > 0) {",
+                  "        pm.collectionVariables.set('category_id', response.data[0].id);",
+                  "        console.log('Category ID saved:', response.data[0].id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Category by Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categories/adventure?page=1&limit=10&language=en",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "adventure"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "language",
+                  "value": "en"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Subcategories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categories/adventure/subcategories?limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "adventure", "subcategories"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎭 Avatars",
       "item": [
         {
           "name": "Get Available Avatars",
@@ -590,16 +718,27 @@
               "host": ["{{base_url}}"],
               "path": ["avatars"]
             }
-          },
-          "response": []
+          }
+        },
+        {
+          "name": "Get Specific Avatar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/avatars/avatar_id_here",
+              "host": ["{{base_url}}"],
+              "path": ["avatars", "avatar_id_here"]
+            }
+          }
         }
       ]
     },
     {
-      "name": "Explore",
+      "name": "🔍 Explore",
       "item": [
         {
-          "name": "Get Categories",
+          "name": "Get Browse Categories",
           "request": {
             "method": "GET",
             "header": [],
@@ -614,11 +753,10 @@
                 }
               ]
             }
-          },
-          "response": []
+          }
         },
         {
-          "name": "Get Continue Playing",
+          "name": "Get Continue Playing Items",
           "request": {
             "method": "GET",
             "header": [],
@@ -633,11 +771,10 @@
                 }
               ]
             }
-          },
-          "response": []
+          }
         },
         {
-          "name": "Get Collections",
+          "name": "Get Featured Collections",
           "request": {
             "method": "GET",
             "header": [],
@@ -652,8 +789,7 @@
                 }
               ]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Get Collection Content",
@@ -675,13 +811,12 @@
                 }
               ]
             }
-          },
-          "response": []
+          }
         }
       ]
     },
     {
-      "name": "Favorites",
+      "name": "❤️ Favorites",
       "item": [
         {
           "name": "Get User Favorites",
@@ -704,7 +839,22 @@
               ]
             }
           },
-          "response": []
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data.favorites && response.data.favorites.length > 0) {",
+                  "        pm.collectionVariables.set('favorite_id', response.data.favorites[0].id);",
+                  "        console.log('Favorite ID saved:', response.data.favorites[0].id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Add to Favorites",
@@ -725,21 +875,7 @@
               "host": ["{{base_url}}"],
               "path": ["favorites"]
             }
-          },
-          "response": []
-        },
-        {
-          "name": "Remove from Favorites",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/favorites/FAVORITE_ID",
-              "host": ["{{base_url}}"],
-              "path": ["favorites", "FAVORITE_ID"]
-            }
-          },
-          "response": []
+          }
         },
         {
           "name": "Check Favorite Status",
@@ -751,13 +887,24 @@
               "host": ["{{base_url}}"],
               "path": ["favorites", "check", "{{content_id}}"]
             }
-          },
-          "response": []
+          }
+        },
+        {
+          "name": "Remove from Favorites",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/favorites/{{favorite_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["favorites", "{{favorite_id}}"]
+            }
+          }
         }
       ]
     },
     {
-      "name": "Progress Tracking",
+      "name": "📊 Progress Tracking",
       "item": [
         {
           "name": "Update Progress",
@@ -778,8 +925,7 @@
               "host": ["{{base_url}}"],
               "path": ["progress"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Get Content Progress",
@@ -791,8 +937,7 @@
               "host": ["{{base_url}}"],
               "path": ["progress", "{{content_id}}"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Get All Progress",
@@ -814,12 +959,12 @@
                 },
                 {
                   "key": "completed",
-                  "value": "false"
+                  "value": "false",
+                  "disabled": true
                 }
               ]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Reset Progress",
@@ -831,13 +976,111 @@
               "host": ["{{base_url}}"],
               "path": ["progress", "{{content_id}}"]
             }
-          },
-          "response": []
+          }
         }
       ]
     },
     {
-      "name": "Payment Orders",
+      "name": "💳 Subscriptions",
+      "item": [
+        {
+          "name": "Get Available Plans",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/subscriptions/plans",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "plans"]
+            }
+          }
+        },
+        {
+          "name": "Get My Subscription",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/subscriptions/me",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "me"]
+            }
+          }
+        },
+        {
+          "name": "Create Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{plan_id_trial}}\",\n  \"paymentContext\": {\n    \"userType\": \"premium\",\n    \"source\": \"mobile_app\",\n    \"metadata\": {\n      \"userPhone\": \"+919999999999\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/subscriptions",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data.subscriptionId) {",
+                  "        pm.collectionVariables.set('subscription_id', response.data.subscriptionId);",
+                  "        console.log('Subscription ID saved:', response.data.subscriptionId);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Subscription",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{plan_id_monthly}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/subscriptions/me",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "me"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Subscription",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/subscriptions/me/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "me", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💰 Payment",
       "item": [
         {
           "name": "Create Order",
@@ -859,7 +1102,43 @@
               "path": ["payment", "order"]
             }
           },
-          "response": []
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data.orderId) {",
+                  "        pm.collectionVariables.set('order_id', response.data.orderId);",
+                  "        console.log('Order ID saved:', response.data.orderId);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Payment Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{plan_id_trial}}\",\n  \"paymentContext\": {\n    \"userType\": \"premium\",\n    \"source\": \"mobile_app\",\n    \"metadata\": {\n      \"userPhone\": \"+919999999999\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment/subscription",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "subscription"]
+            }
+          }
         },
         {
           "name": "Get User Orders",
@@ -881,57 +1160,7 @@
                 }
               ]
             }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Payment Subscriptions",
-      "item": [
-        {
-          "name": "Create Subscription - Monthly",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"planId\": \"plan_RAeTVEtz6dFtPY\",\n  \"paymentContext\": {\n    \"userType\": \"premium\",\n    \"source\": \"mobile_app\"\n  }\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/payment/subscription",
-              "host": ["{{base_url}}"],
-              "path": ["payment", "subscription"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create Subscription - Yearly",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"planId\": \"plan_RAeTumFCrDrT4X\",\n  \"paymentContext\": {\n    \"userType\": \"premium\",\n    \"source\": \"mobile_app\"\n  }\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/payment/subscription",
-              "host": ["{{base_url}}"],
-              "path": ["payment", "subscription"]
-            }
-          },
-          "response": []
+          }
         },
         {
           "name": "Get User Subscriptions",
@@ -953,14 +1182,8 @@
                 }
               ]
             }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Payment Verification",
-      "item": [
+          }
+        },
         {
           "name": "Verify Payment Success",
           "request": {
@@ -980,195 +1203,245 @@
               "host": ["{{base_url}}"],
               "path": ["payment", "verify-success"]
             }
-          },
-          "response": []
+          }
+        },
+        {
+          "name": "Payment Callback (Microservice)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"subscriptionId\": \"{{subscription_id}}\",\n  \"razorpaySubscriptionId\": \"sub_razorpay_123\",\n  \"status\": \"active\",\n  \"paymentContext\": {\n    \"planType\": \"trial\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment/callback",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "callback"]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
         }
       ]
     },
     {
-      "name": "Payment Callbacks",
+      "name": "🔧 Admin Operations",
       "item": [
         {
-          "name": "Payment Callback - Order Success",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"orderId\": \"order_123\",\n  \"razorpayOrderId\": \"order_razorpay_123\",\n  \"status\": \"paid\",\n  \"paymentContext\": {\n    \"amount\": 9900,\n    \"currency\": \"INR\",\n    \"planType\": \"monthly\"\n  }\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/payment/callback",
-              "host": ["{{base_url}}"],
-              "path": ["payment", "callback"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Payment Callback - Subscription Active",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"subscriptionId\": \"sub_123\",\n  \"razorpaySubscriptionId\": \"sub_razorpay_123\",\n  \"status\": \"active\",\n  \"paymentContext\": {\n    \"planId\": \"plan_RAeTVEtz6dFtPY\",\n    \"planType\": \"monthly\"\n  }\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/payment/callback",
-              "host": ["{{base_url}}"],
-              "path": ["payment", "callback"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Payment Callback - Payment Failed",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"orderId\": \"order_123\",\n  \"status\": \"failed\",\n  \"paymentContext\": {\n    \"reason\": \"insufficient_funds\",\n    \"errorCode\": \"BAD_REQUEST_ERROR\"\n  }\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/payment/callback",
-              "host": ["{{base_url}}"],
-              "path": ["payment", "callback"]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Subscription Management",
-      "item": [
-        {
-          "name": "Get My Subscription",
+          "name": "Admin Health Check",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/subscriptions/me",
+              "raw": "{{base_url}}/admin/health",
               "host": ["{{base_url}}"],
-              "path": ["subscriptions", "me"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create Subscription - Monthly (Legacy)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"planId\": \"plan_RAeTVEtz6dFtPY\",\n  \"paymentContext\": {\n    \"userType\": \"premium\"\n  }\n}"
+              "path": ["admin", "health"]
             },
-            "url": {
-              "raw": "{{base_url}}/subscriptions",
-              "host": ["{{base_url}}"],
-              "path": ["subscriptions"]
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
             }
-          },
-          "response": []
+          }
         },
         {
-          "name": "Create Subscription - Yearly (Legacy)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"planId\": \"plan_RAeTumFCrDrT4X\",\n  \"paymentContext\": {\n    \"userType\": \"premium\"\n  }\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/subscriptions",
-              "host": ["{{base_url}}"],
-              "path": ["subscriptions"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update My Subscription",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"planId\": \"plan_RAeTumFCrDrT4X\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/subscriptions/me",
-              "host": ["{{base_url}}"],
-              "path": ["subscriptions", "me"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Cancel My Subscription",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/subscriptions/me/cancel",
-              "host": ["{{base_url}}"],
-              "path": ["subscriptions", "me", "cancel"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Subscription Plans",
+          "name": "Admin - List Users",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/subscriptions/plans",
+              "raw": "{{base_url}}/admin/users?page=1&limit=10&search=&status=active",
               "host": ["{{base_url}}"],
-              "path": ["subscriptions", "plans"]
+              "path": ["admin", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "disabled": true
+                },
+                {
+                  "key": "provider",
+                  "value": "email",
+                  "disabled": true
+                },
+                {
+                  "key": "subscription",
+                  "value": "premium",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
             }
-          },
-          "response": []
+          }
+        },
+        {
+          "name": "Admin - Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Admin Created User\",\n  \"email\": \"admin-created@example.com\",\n  \"password\": \"password123\",\n  \"provider\": \"email\",\n  \"roles\": [\"user\"],\n  \"subscription\": {\n    \"plan\": \"free\"\n  },\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/users",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin - List Content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/content?page=1&limit=10&type=story&language=en",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "content"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "type",
+                  "value": "story",
+                  "disabled": true
+                },
+                {
+                  "key": "language",
+                  "value": "en",
+                  "disabled": true
+                },
+                {
+                  "key": "ageRange",
+                  "value": "6-8",
+                  "disabled": true
+                },
+                {
+                  "key": "featured",
+                  "value": "true",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin - Create Content",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"New Story Title\",\n  \"description\": \"A wonderful story for kids\",\n  \"type\": \"story\",\n  \"ageRange\": \"6-8\",\n  \"language\": \"en\",\n  \"audioUrl\": \"https://example.com/audio.mp3\",\n  \"imageUrl\": \"https://example.com/image.jpg\",\n  \"durationSec\": 300,\n  \"category\": \"{{category_id}}\",\n  \"featured\": false,\n  \"isNewCollection\": false,\n  \"isTrendingNow\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/content",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "content"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
         }
       ]
     },
     {
-      "name": "Health & Utility",
+      "name": "🏥 Health & System",
       "item": [
+        {
+          "name": "API Root",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
         {
           "name": "Health Check",
           "request": {
@@ -1178,9 +1451,11 @@
               "raw": "{{base_url}}/health",
               "host": ["{{base_url}}"],
               "path": ["health"]
+            },
+            "auth": {
+              "type": "noauth"
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Detailed Health Check",
@@ -1191,24 +1466,11 @@
               "raw": "{{base_url}}/health/detailed",
               "host": ["{{base_url}}"],
               "path": ["health", "detailed"]
+            },
+            "auth": {
+              "type": "noauth"
             }
-          },
-          "response": []
-        },
-        {
-          "name": "API Root",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "http://localhost:5000/",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": [""]
-            }
-          },
-          "response": []
+          }
         }
       ]
     }

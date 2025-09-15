@@ -1,12 +1,24 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
+const AWS = require('aws-sdk');
 const { body, query, param } = require('express-validator');
 const { Content, Progress, Favorite } = require('../../models');
 const { adminAuth, logAdminAction, validateAdminRequest } = require('../../middleware/adminAuth');
 const logger = require('../../config/logger');
 
 const router = express.Router();
+
+// Configure AWS S3
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION
+});
+
+const s3 = new AWS.S3();
+const bucketName = process.env.AWS_S3_BUCKET_NAME;
+const cloudFrontDomain = process.env.CLOUDFRONT_DISTRIBUTION_DOMAIN || 'd1ta1qd8y4woyq.cloudfront.net';
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage();
@@ -88,19 +100,42 @@ router.post('/upload',
       const fileExtension = path.extname(file.originalname);
       const fileName = `${fileType}_${timestamp}_${randomString}${fileExtension}`;
 
-      // For now, we'll simulate file upload and return a mock URL
-      // In a real implementation, this would upload to AWS S3
-      const mockUrl = `https://d1ta1qd8y4woyq.cloudfront.net/uploads/${fileType}/${fileName}`;
+      // Upload to S3
+      const s3Key = `uploads/${fileType}/${fileName}`;
 
-      logger.info(`File uploaded: ${fileName} (${file.size} bytes)`);
+      // Determine content type
+      let contentType = file.mimetype;
+      if (!contentType) {
+        const ext = fileExtension.toLowerCase();
+        if (ext === '.mp3') contentType = 'audio/mpeg';
+        else if (ext === '.png') contentType = 'image/png';
+        else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+        else contentType = 'application/octet-stream';
+      }
+
+      const uploadParams = {
+        Bucket: bucketName,
+        Key: s3Key,
+        Body: file.buffer,
+        ContentType: contentType,
+        CacheControl: 'max-age=31536000' // 1 year cache
+      };
+
+      logger.info(`Uploading file to S3: ${s3Key} (${file.size} bytes)`);
+
+      const s3Result = await s3.upload(uploadParams).promise();
+      const cloudFrontUrl = `https://${cloudFrontDomain}/${s3Key}`;
+
+      logger.info(`File uploaded successfully: ${cloudFrontUrl}`);
 
       res.success({
-        url: mockUrl,
+        url: cloudFrontUrl,
         filename: fileName,
         originalName: file.originalname,
         size: file.size,
         mimetype: file.mimetype,
-        type: fileType
+        type: fileType,
+        s3Location: s3Result.Location
       }, 'File uploaded successfully');
 
     } catch (error) {
@@ -130,8 +165,8 @@ router.get('/',
         trendingnow
       } = req.query;
 
-      // Build filter query
-      const filter = {};
+      // Build filter query - only show active content
+      const filter = { isActive: true };
       
       if (search) {
         filter.$or = [
