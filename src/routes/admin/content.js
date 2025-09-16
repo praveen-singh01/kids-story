@@ -182,7 +182,7 @@ router.get('/',
       if (type) filter.type = type;
       if (ageRange) filter.ageRange = ageRange;
       if (category) filter.category = category;
-      if (typeof featured === 'boolean') filter.featured = featured;
+      if (typeof featured === 'boolean') filter.isFeatured = featured;
 
       // Language filtering - only show content that has the requested language
       if (language) {
@@ -264,7 +264,7 @@ router.get('/stats',
     try {
       const totalContent = await Content.countDocuments();
       const activeContent = await Content.countDocuments({ isActive: true });
-      const featuredContent = await Content.countDocuments({ featured: true });
+      const featuredContent = await Content.countDocuments({ isFeatured: true });
 
       // Content by type
       const contentByType = await Content.aggregate([
@@ -442,7 +442,7 @@ router.post('/',
         durationSec: contentData.durationSec,
         ageRange: contentData.ageRange,
         category: contentData.category,
-        featured: contentData.featured || false,
+        isFeatured: contentData.featured || false, // Use isFeatured instead of featured
         isNewCollection: contentData.isNewCollection || false,
         isTrendingNow: contentData.isTrendingNow || false,
         defaultLanguage: contentData.language,
@@ -505,7 +505,7 @@ router.patch('/:id',
       if (updateData.type) content.type = updateData.type;
       if (updateData.ageRange) content.ageRange = updateData.ageRange;
       if (updateData.category !== undefined) content.category = updateData.category;
-      if (typeof updateData.featured === 'boolean') content.featured = updateData.featured;
+      if (typeof updateData.featured === 'boolean') content.isFeatured = updateData.featured; // Use isFeatured
       if (typeof updateData.isNewCollection === 'boolean') content.isNewCollection = updateData.isNewCollection;
       if (typeof updateData.isTrendingNow === 'boolean') content.isTrendingNow = updateData.isTrendingNow;
       if (typeof updateData.isActive === 'boolean') content.isActive = updateData.isActive;
@@ -592,7 +592,7 @@ router.patch('/:id/featured',
 
       const content = await Content.findByIdAndUpdate(
         id,
-        { featured },
+        { isFeatured: featured }, // Use isFeatured field
         { new: true }
       );
 

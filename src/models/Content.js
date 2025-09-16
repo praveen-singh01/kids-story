@@ -218,11 +218,22 @@ contentSchema.index({ title: 'text', description: 'text' }); // Text search inde
 // Pre-save middleware to generate slug and handle language setup
 contentSchema.pre('save', function(next) {
   if (this.isModified('title') || this.isNew) {
-    this.slug = slugify(this.title, {
+    // Handle Hindi and other non-Latin scripts by creating a fallback slug
+    let slug = slugify(this.title, {
       lower: true,
-      strict: true,
+      strict: false, // Allow non-Latin characters
       remove: /[*+~.()'"!:@]/g
     });
+
+    // If slug is empty (common with non-Latin scripts), create a fallback
+    if (!slug || slug.trim() === '') {
+      // Use a combination of type, language, and timestamp for uniqueness
+      const timestamp = Date.now();
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      slug = `${this.type || 'content'}-${this.defaultLanguage || 'en'}-${timestamp}-${randomSuffix}`;
+    }
+
+    this.slug = slug;
   }
 
   // Ensure availableLanguages includes defaultLanguage

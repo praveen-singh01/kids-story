@@ -36,7 +36,8 @@ connectDB();
 
 // Security middleware
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false // Allow embedding of cross-origin resources like audio
 }));
 
 // CORS configuration
@@ -48,7 +49,10 @@ const corsOptions = {
     'http://localhost:3002'
   ],
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  // Allow additional headers for audio requests
+  allowedHeaders: ['Content-Type', 'Authorization', 'Range', 'Accept-Ranges'],
+  exposedHeaders: ['Content-Range', 'Accept-Ranges', 'Content-Length']
 };
 app.use(cors(corsOptions));
 
@@ -78,6 +82,18 @@ if (process.env.NODE_ENV !== 'test') {
 
 // Response formatter middleware
 app.use(responseFormatter);
+
+// Add middleware to handle audio file requests with proper headers
+app.use('/api', (req, res, next) => {
+  // Add headers for audio file requests
+  if (req.path.includes('audio') || req.headers.accept?.includes('audio')) {
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Range');
+  }
+  next();
+});
 
 // API routes
 app.use(`/api/${API_VERSION}/auth`, authRoutes);
