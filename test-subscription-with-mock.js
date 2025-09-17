@@ -34,7 +34,7 @@ const logger = require('../config/logger');
 class PaymentServiceClient {
   constructor() {
     this.baseUrl = 'mock://payment-service';
-    this.packageId = 'com.kids.story';
+    this.packageId = 'com.sunostories.app';
     this.jwtSecret = 'mock-secret';
     logger.info('Using MOCK Payment Service for testing');
   }

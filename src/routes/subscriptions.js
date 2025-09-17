@@ -122,7 +122,7 @@ router.post('/', authenticate, validateSubscriptionCreation, handleValidationErr
         userEmail: user.email,
         userPhone: user.phone || paymentContext.metadata?.userPhone || '9999999999', // Use user phone or fallback
         userId: userId,
-        packageId: 'com.kids.story',
+        packageId: 'com.sunostories.app',
         planId: planId,
         planType: planType,
         ...paymentContext.metadata // Allow override from request
@@ -220,7 +220,7 @@ router.post('/me/cancel', authenticate, async (req, res) => {
 router.get('/plans', authenticate, async (req, res) => {
   try {
     const userId = req.userId;
-    const packageId = 'com.kids.story';
+    const packageId = 'com.sunostories.app';
 
     // Check if payment microservice is enabled
     const isMicroserviceEnabled = () => {

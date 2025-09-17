@@ -135,7 +135,7 @@ class PaymentServiceClient {
       const payload = {
         userId,
         planType,
-        packageName: 'com.kids.story',
+        packageName: 'com.sunostories.app',
         paymentContext: enhancedPaymentContext
       };
       if (callbackUrl) payload.callbackUrl = callbackUrl;
@@ -144,7 +144,7 @@ class PaymentServiceClient {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.generateJWT(userId)}`,
-          'x-app-id': 'com.kids.story'
+          'x-app-id': 'com.sunostories.app'
         }
       });
 

@@ -109,7 +109,7 @@ router.post('/subscription', authenticate, validateSubscriptionCreation, handleV
         userEmail: user.email,
         userPhone: user.phone || paymentContext.metadata?.userPhone || '9999999999',
         userId: userId,
-        packageId: 'com.kids.story',
+        packageId: 'com.sunostories.app',
         ...paymentContext.metadata // Allow override from request
       }
     };

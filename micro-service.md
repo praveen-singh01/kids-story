@@ -1,14 +1,14 @@
-# Kids Story App (com.kids.story) - Payment Microservice Integration Guide
+# Suno Stories App (com.sunostories.app) - Payment Microservice Integration Guide
 
 ## 🚀 Overview
 
-This guide provides comprehensive instructions for integrating the Kids Story app (`com.kids.story`) with the Payment Microservice. The integration follows the same multi-tenant architecture used by other apps in the system.
+This guide provides comprehensive instructions for integrating the Suno Stories app (`com.sunostories.app`) with the Payment Microservice. The integration follows the same multi-tenant architecture used by other apps in the system.
 
 ## 📱 App Configuration
 
 ### Package ID
 ```
-com.kids.story
+com.sunostories.app
 ```
 
 ### Backend Name
@@ -27,7 +27,7 @@ Add these to your payment microservice `.env` file:
 JWT_SECRET_BACKEND_C=your_secure_jwt_secret_minimum_32_characters
 
 # Callback URL for Kids Story App
-CALLBACK_URL_COM_KIDS_STORY=https://api.kidsstory.com/api/payment/callback
+CALLBACK_URL_COM_SUNOSTORIES_APP=https://api.sunostories.com/api/payment/callback
 ```
 
 ### Dynamic App Configuration (Recommended)
@@ -39,7 +39,7 @@ curl -X POST https://payments.netaapp.in/api/config/apps \
   -H "Content-Type: application/json" \
   -H "x-admin-api-key: YOUR_ADMIN_API_KEY" \
   -d '{
-    "packageId": "com.kids.story",
+    "packageId": "com.sunostories.app",
     "jwtSecret": "your_secure_jwt_secret_minimum_32_characters",
     "callbackUrl": "https://api.kidsstory.com/api/payment/callback",
     "backendName": "backend-c-kids-story",
@@ -65,7 +65,7 @@ Create/update your `.env` file:
 USE_PAYMENT_MICROSERVICE=true
 PAYMENT_MICROSERVICE_URL=https://payments.gumbotech.in
 PAYMENT_JWT_SECRET=your_secure_jwt_secret_minimum_32_characters
-PAYMENT_PACKAGE_ID=com.kids.story
+PAYMENT_PACKAGE_ID=com.sunostories.app
 
 # Razorpay Plan IDs (you'll need to create these in Razorpay dashboard)
 RAZORPAY_TRIAL_PLAN_ID=plan_kids_story_trial
@@ -86,7 +86,7 @@ const jwt = require('jsonwebtoken');
 function generatePaymentToken(userId) {
   const payload = {
     userId: userId,
-    appId: 'com.kids.story',
+    appId: 'com.sunostories.app',
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hour expiry
   };
@@ -314,7 +314,7 @@ All API calls should be made to: `https://payments.netaapp.in`
 ```javascript
 {
   "Authorization": "Bearer YOUR_JWT_TOKEN",
-  "x-app-id": "com.kids.story",
+  "x-app-id": "com.sunostories.app",
   "Content-Type": "application/json"
 }
 ```
@@ -329,7 +329,7 @@ All API calls should be made to: `https://payments.netaapp.in`
 
 ## ✅ Integration Checklist
 
-- [ ] Add `com.kids.story` to payment microservice configuration
+- [ ] Add `com.sunostories.app` to payment microservice configuration
 - [ ] Set up environment variables in payment microservice
 - [ ] Create Razorpay plans for Kids Story app
 - [ ] Implement JWT token generation in Kids Story backend
@@ -353,6 +353,6 @@ All API calls should be made to: `https://payments.netaapp.in`
 ## 📞 Support
 
 For integration support, contact the payment microservice team with:
-- Package ID: `com.kids.story`
-- Backend Name: `backend-c-kids-story`
+- Package ID: `com.sunostories.app`
+- Backend Name: `backend-c-sunostories`
 - Any error logs or integration issues

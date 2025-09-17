@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 // Configuration
 const KIDS_STORY_BACKEND_URL = 'http://localhost:3000';
 const PAYMENT_MICROSERVICE_URL = 'https://payments.gumbotech.in';
-const PACKAGE_ID = 'com.kids.story';
+const PACKAGE_ID = 'com.sunostories.app';
 const JWT_SECRET = 'hsdhjhdjasjhdhjhb12@kdjfknndjfhjk34578jdhfjhdjh';
 
 // Colors for console output
@@ -82,7 +82,7 @@ async function testKidsStoryBackend() {
       userEmail: 'test@example.com',
       userPhone: '9999999999', // Default fallback phone
       userId: 'test_user_123',
-      packageId: 'com.kids.story'
+      packageId: 'com.sunostories.app'
     }
   };
 

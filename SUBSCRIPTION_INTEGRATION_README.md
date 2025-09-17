@@ -102,7 +102,7 @@ null             → "9999999999"
 USE_PAYMENT_MICROSERVICE=true
 PAYMENT_MICROSERVICE_URL=https://payments.gumbotech.in
 PAYMENT_JWT_SECRET=hsdhjhdjasjhdhjhb12@kdjfknndjfhjk34578jdhfjhdjh
-PAYMENT_PACKAGE_ID=com.kids.story
+PAYMENT_PACKAGE_ID=com.sunostories.app
 
 # Razorpay Plan IDs
 RAZORPAY_MONTHLY_PLAN_ID=plan_RAeTVEtz6dFtPY
@@ -144,7 +144,7 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 
 const token = jwt.sign(
-  { userId: 'test', appId: 'com.kids.story' },
+  { userId: 'test', appId: 'com.sunostories.app' },
   'hsdhjhdjasjhdhjhb12@kdjfknndjfhjk34578jdhfjhdjh',
   { expiresIn: '1h' }
 );
@@ -162,7 +162,7 @@ axios.post('https://payments.gumbotech.in/api/payment/subscription', {
 }, {
   headers: {
     'Authorization': \`Bearer \${token}\`,
-    'x-app-id': 'com.kids.story',
+    'x-app-id': 'com.sunostories.app',
     'Content-Type': 'application/json'
   }
 }).then(r => console.log('✅ SUCCESS:', r.data.data.subscriptionId))
@@ -195,7 +195,7 @@ axios.post('https://payments.gumbotech.in/api/payment/subscription', {
 - **Solution**: Use 10-digit number starting with 6-9
 
 #### "Package ID not found"
-- **Cause**: Payment microservice not configured for com.kids.story
+- **Cause**: Payment microservice not configured for com.sunostories.app
 - **Solution**: Verify JWT_SECRET_BACKEND_C in payment microservice
 
 #### "User not found"
@@ -211,7 +211,7 @@ curl http://localhost:3000/api/v1/health
 node -e "
 const jwt = require('jsonwebtoken');
 const token = jwt.sign(
-  { userId: 'test', appId: 'com.kids.story' },
+  { userId: 'test', appId: 'com.sunostories.app' },
   process.env.PAYMENT_JWT_SECRET,
   { expiresIn: '1h' }
 );
