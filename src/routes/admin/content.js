@@ -37,7 +37,7 @@ const upload = multer({
   }
 });
 
-// Validation rules
+// Validation rules for single-language content (legacy)
 const validateContentCreation = [
   body('title').notEmpty().trim().isLength({ min: 1, max: 200 }),
   body('description').optional().trim().isLength({ max: 2000 }),
@@ -51,6 +51,37 @@ const validateContentCreation = [
   body('featured').optional().isBoolean(),
   body('isNewCollection').optional().isBoolean(),
   body('isTrendingNow').optional().isBoolean()
+];
+
+// Validation rules for multilingual content
+const validateMultilingualContentCreation = [
+  body('type').isIn(['story', 'meditation', 'sound']),
+  body('ageRange').isIn(['3-5', '6-8', '9-12', '13+']),
+  body('durationSec').isInt({ min: 1 }),
+  body('category').optional({ nullable: true }).custom((value) => {
+    if (value === null || value === undefined || value === '') {
+      return true;
+    }
+    return /^[0-9a-fA-F]{24}$/.test(value);
+  }),
+  body('featured').optional().isBoolean(),
+  body('isNewCollection').optional().isBoolean(),
+  body('isTrendingNow').optional().isBoolean(),
+  body('defaultLanguage').isIn(['en', 'hi']),
+  body('availableLanguages').isArray({ min: 1 }),
+  body('availableLanguages.*').isIn(['en', 'hi']),
+  body('languages').isObject(),
+  // Validate specific language content
+  body('languages.en.title').optional().notEmpty().trim().isLength({ min: 1, max: 200 }),
+  body('languages.en.description').optional().trim().isLength({ max: 2000 }),
+  body('languages.en.audioUrl').optional().notEmpty().isURL(),
+  body('languages.en.imageUrl').optional().notEmpty().isURL(),
+  body('languages.en.thumbnailUrl').optional().isURL(),
+  body('languages.hi.title').optional().notEmpty().trim().isLength({ min: 1, max: 200 }),
+  body('languages.hi.description').optional().trim().isLength({ max: 2000 }),
+  body('languages.hi.audioUrl').optional().notEmpty().isURL(),
+  body('languages.hi.imageUrl').optional().notEmpty().isURL(),
+  body('languages.hi.thumbnailUrl').optional().isURL()
 ];
 
 const validateContentUpdate = [
@@ -416,7 +447,83 @@ router.get('/:id',
   }
 );
 
-// POST /admin/content - Create new content
+// POST /admin/content/multilingual - Create new multilingual content
+router.post('/multilingual',
+  adminAuth,
+  logAdminAction('CREATE_MULTILINGUAL_CONTENT'),
+  validateAdminRequest(validateMultilingualContentCreation),
+  async (req, res) => {
+    try {
+      const contentData = req.body;
+
+      // Validate category if provided
+      if (contentData.category) {
+        const { Category } = require('../../models');
+        const category = await Category.findById(contentData.category);
+        if (!category || !category.isActive) {
+          return res.status(400).error(['Invalid or inactive category'], 'Category validation failed');
+        }
+      }
+
+      // Validate that all specified languages have content
+      const { defaultLanguage, availableLanguages, languages } = contentData;
+
+      // Check that defaultLanguage is in availableLanguages
+      if (!availableLanguages.includes(defaultLanguage)) {
+        return res.status(400).error(['Default language must be included in available languages'], 'Language validation failed');
+      }
+
+      // Check that all availableLanguages have content in the languages object
+      for (const lang of availableLanguages) {
+        if (!languages[lang]) {
+          return res.status(400).error([`Missing content for language: ${lang}`], 'Language content validation failed');
+        }
+
+        // Validate required fields for each language
+        const langContent = languages[lang];
+        if (!langContent.title || !langContent.audioUrl || !langContent.imageUrl) {
+          return res.status(400).error([`Missing required fields (title, audioUrl, imageUrl) for language: ${lang}`], 'Language content validation failed');
+        }
+      }
+
+      // Get title and description from default language for base fields
+      const defaultLangContent = languages[defaultLanguage];
+
+      // Create content structure
+      const content = new Content({
+        type: contentData.type,
+        title: defaultLangContent.title, // Use default language title for base title
+        description: defaultLangContent.description || '', // Use default language description for base description
+        durationSec: contentData.durationSec,
+        ageRange: contentData.ageRange,
+        category: contentData.category,
+        isFeatured: contentData.featured || false,
+        isNewCollection: contentData.isNewCollection || false,
+        isTrendingNow: contentData.isTrendingNow || false,
+        defaultLanguage: defaultLanguage,
+        availableLanguages: availableLanguages,
+        languages: languages,
+        // Legacy fields for backward compatibility (use default language)
+        language: defaultLanguage,
+        audioUrl: defaultLangContent.audioUrl,
+        imageUrl: defaultLangContent.imageUrl,
+        thumbnailUrl: defaultLangContent.thumbnailUrl || defaultLangContent.imageUrl
+      });
+
+      await content.save();
+
+      logger.info(`New multilingual content created: ${defaultLangContent.title} (${availableLanguages.join(', ')}) by admin ${req.userId}`);
+
+      res.status(201).success(content, 'Multilingual content created successfully');
+
+    } catch (error) {
+      logger.error('Admin create multilingual content error:', error);
+      res.status(500).error(['Failed to create multilingual content'], 'Internal server error');
+    }
+  }
+);
+
+// POST /admin/content - Create new content (legacy single-language)
 router.post('/',
   adminAuth,
   logAdminAction('CREATE_CONTENT'),
