@@ -2,8 +2,66 @@ const { User } = require('../models');
 const JWTUtils = require('../utils/jwt');
 const googleAuth = require('../utils/googleAuth');
 const logger = require('../config/logger');
+const paymentServiceClient = require('./paymentService');
 
 class AuthService {
+  constructor() {
+    // Initialize payment service client if microservice is enabled
+    this.paymentService = null;
+
+    logger.info('Initializing AuthService with payment microservice check...', {
+      USE_PAYMENT_MICROSERVICE: process.env.USE_PAYMENT_MICROSERVICE,
+      PAYMENT_MICROSERVICE_URL: !!process.env.PAYMENT_MICROSERVICE_URL,
+      PAYMENT_JWT_SECRET: !!process.env.PAYMENT_JWT_SECRET,
+      PAYMENT_PACKAGE_ID: process.env.PAYMENT_PACKAGE_ID
+    });
+
+    if (this.isMicroserviceEnabled()) {
+      try {
+        this.paymentService = paymentServiceClient;
+        logger.info('Payment microservice client initialized successfully');
+      } catch (error) {
+        logger.error('Payment microservice initialization failed:', error.message);
+        logger.error('Error details:', error);
+        this.paymentService = null;
+      }
+    } else {
+      logger.info('Payment microservice is disabled');
+    }
+  }
+
+  /**
+   * Check if payment microservice is enabled
+   */
+  isMicroserviceEnabled() {
+    return process.env.USE_PAYMENT_MICROSERVICE === 'true' &&
+           process.env.PAYMENT_MICROSERVICE_URL &&
+           process.env.PAYMENT_JWT_SECRET;
+  }
+
+  /**
+   * Check trial eligibility for a user
+   */
+  async checkTrialEligibility(userId) {
+    if (!this.paymentService) {
+      return { isTrialEligible: false, trialUsed: true };
+    }
+
+    try {
+      const packageId = process.env.PAYMENT_PACKAGE_ID || 'com.sunostories.app';
+      const result = await this.paymentService.checkTrialEligibility(userId, packageId);
+
+      return {
+        isTrialEligible: result.success && result.data?.canUseTrial,
+        trialUsed: !result.data?.canUseTrial,
+        hasExistingSubscription: result.data?.hasExistingSubscription
+      };
+    } catch (error) {
+      logger.warn('Failed to check trial eligibility:', error.message);
+      return { isTrialEligible: false, trialUsed: true };
+    }
+  }
+
   async registerWithEmail(userData) {
     const { email, password, name, phone } = userData;
 
@@ -37,13 +95,23 @@ class AuthService {
 
     await user.save();
 
+    // Check trial eligibility for new user
+    const trialEligibility = await this.checkTrialEligibility(user._id);
+
     // Generate tokens
     const tokens = JWTUtils.generateTokens({ userId: user._id });
 
     logger.info(`New user registered: ${email}${phone ? ` with phone: ${phone}` : ''}`);
 
     return {
-      user,
+      user: {
+        ...user.toObject(),
+        subscription: {
+          ...user.subscription,
+          isTrialEligible: trialEligibility.isTrialEligible,
+          hasUsedTrial: trialEligibility.trialUsed
+        }
+      },
       ...tokens,
       emailVerificationToken
     };
@@ -149,6 +217,19 @@ class AuthService {
         await user.save();
 
         logger.info(`New Google user registered: ${googleUser.email}`);
+
+        // Check trial eligibility for new Google user
+        const trialEligibility = await this.checkTrialEligibility(user._id);
+
+        // Update user object with trial information
+        user = {
+          ...user.toObject(),
+          subscription: {
+            ...user.subscription,
+            isTrialEligible: trialEligibility.isTrialEligible,
+            hasUsedTrial: trialEligibility.trialUsed
+          }
+        };
       }
 
       // Generate tokens

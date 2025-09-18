@@ -333,6 +333,64 @@ class PaymentServiceClient {
       throw error;
     }
   }
+
+  /**
+   * Get trial configuration for the package
+   * @returns {Promise<Object>} Trial configuration result
+   */
+  async getTrialConfig() {
+    logger.info('Fetching trial configuration via payment microservice', {
+      packageId: this.packageId,
+      baseUrl: this.baseUrl
+    });
+
+    try {
+      // Use admin API key for configuration access
+      const adminApiKey = process.env.PAYMENT_ADMIN_API_KEY || 'test_admin_api_key_12345';
+      const response = await axios.get(`${this.baseUrl}/api/config/apps/${this.packageId}/trial`, {
+        headers: {
+          'x-admin-api-key': adminApiKey,
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
+      });
+
+      logger.info('Trial configuration fetched successfully', {
+        packageId: this.packageId,
+        amount: response.data.data?.amount,
+        amountInRupees: response.data.data?.amountInRupees,
+        duration: response.data.data?.duration,
+        enabled: response.data.data?.enabled
+      });
+
+      return {
+        success: response.data.success,
+        data: {
+          amount: response.data.data?.amount || 300, // Default to 300 paise (₹3)
+          amountInRupees: response.data.data?.amountInRupees || 3,
+          duration: response.data.data?.duration || 1,
+          enabled: response.data.data?.enabled !== false
+        }
+      };
+    } catch (error) {
+      logger.error('Failed to fetch trial configuration', {
+        packageId: this.packageId,
+        error: error.response?.data || error.message
+      });
+
+      // Return fallback configuration on error
+      return {
+        success: false,
+        data: {
+          amount: 300, // Default ₹3 in paise
+          amountInRupees: 3,
+          duration: 1,
+          enabled: true
+        },
+        error: error.response?.data?.error?.message || error.response?.data?.message || 'Failed to fetch trial configuration'
+      };
+    }
+  }
 }
 
 module.exports = new PaymentServiceClient();
