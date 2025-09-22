@@ -462,9 +462,76 @@ router.post('/verify-manual', authenticate, async (req, res) => {
   }
 });
 
-// POST /payment/callback - Handle payment callbacks from microservice
+// POST /payment/callback - Handle payment callbacks from microservice (supports both formats)
 router.post('/callback', async (req, res) => {
   try {
+    // Support new trial-aware callback format (same as Milo backend)
+    if (typeof req.body?.success === 'boolean' && req.body?.userId) {
+      logger.info('Processing trial-aware callback format');
+
+      const {
+        success,
+        userId,
+        packageName,
+        planType,
+        trialUsed,
+        status,
+        razorpaySubscriptionId,
+        nextBillingDate
+      } = req.body;
+
+      // Validate package name matches expected
+      const expectedPackageName = process.env.PAYMENT_PACKAGE_ID || 'com.sunostories.app';
+      if (packageName !== expectedPackageName) {
+        logger.warn('Package ID mismatch in trial-aware callback', {
+          expected: expectedPackageName,
+          received: packageName
+        });
+        return res.status(400).json({
+          success: false,
+          message: 'Package ID mismatch'
+        });
+      }
+
+      logger.info('Processing trial-aware payment callback', {
+        success,
+        userId,
+        packageName,
+        planType,
+        trialUsed,
+        status,
+        razorpaySubscriptionId
+      });
+
+      if (success && (status === 'active' || status === 'paid')) {
+        // Update user subscription with trial-aware data
+        await paymentService.updateUserSubscription(userId, {
+          status: 'active',
+          plan: planType || 'monthly',
+          provider: 'razorpay',
+          providerRef: razorpaySubscriptionId,
+          razorpaySubscriptionId: razorpaySubscriptionId,
+          trialUsed: trialUsed || false,
+          nextBillingDate: nextBillingDate ? new Date(nextBillingDate) : null,
+          currentPeriodEnd: nextBillingDate ? new Date(nextBillingDate) : null
+        });
+
+        logger.info(`Trial-aware subscription activated for user ${userId} with plan: ${planType}`);
+      } else {
+        logger.warn('Trial-aware callback indicates failure', {
+          success,
+          userId,
+          status
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: 'Trial-aware callback processed successfully'
+      });
+    }
+
+    // Legacy callback format handling
     const {
       userId,
       orderId,
@@ -475,7 +542,7 @@ router.post('/callback', async (req, res) => {
       paymentContext
     } = req.body;
 
-    logger.info('Payment callback received:', {
+    logger.info('Payment callback received (legacy format):', {
       userId,
       orderId,
       subscriptionId,
