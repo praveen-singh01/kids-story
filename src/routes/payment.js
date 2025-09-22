@@ -46,6 +46,23 @@ const validateSubscriptionCreation = [
 
 // Validation middleware for payment verification
 const validatePaymentVerification = [
+  body('razorpayOrderId')
+    .optional()
+    .isString()
+    .withMessage('Razorpay order ID must be a string'),
+  body('razorpaySubscriptionId')
+    .optional()
+    .isString()
+    .withMessage('Razorpay subscription ID must be a string'),
+  body('razorpayPaymentId')
+    .optional()
+    .isString()
+    .withMessage('Razorpay payment ID must be a string'),
+  body('razorpaySignature')
+    .optional()
+    .isString()
+    .withMessage('Razorpay signature must be a string'),
+  // Legacy field names for backward compatibility
   body('razorpay_order_id')
     .optional()
     .isString()
@@ -174,26 +191,274 @@ router.get('/subscriptions', authenticate, async (req, res) => {
   }
 });
 
-// POST /payment/verify-success - Verify payment success
-router.post('/verify-success', authenticate, validatePaymentVerification, handleValidationErrors, async (req, res) => {
+// POST /payment/verify - Payment verification endpoint (matches Milo backend pattern)
+router.post('/verify', authenticate, async (req, res) => {
   try {
     const userId = req.userId;
-    const verificationData = req.body;
+    const {
+      razorpayOrderId,
+      razorpaySubscriptionId,
+      razorpayPaymentId,
+      razorpaySignature,
+      // Legacy field names for backward compatibility
+      razorpay_order_id,
+      razorpay_subscription_id,
+      razorpay_payment_id,
+      razorpay_signature
+    } = req.body;
 
-    const result = await paymentService.verifyPayment(userId, verificationData);
+    // Normalize field names (same as Milo backend)
+    const normalizedOrderId = razorpayOrderId || razorpay_order_id;
+    const normalizedSubscriptionId = razorpaySubscriptionId || razorpay_subscription_id;
+    const normalizedPaymentId = razorpayPaymentId || razorpay_payment_id;
+    const normalizedSignature = razorpaySignature || razorpay_signature;
 
-    logger.info(`Payment verification completed for user ${userId}`);
+    logger.info('Payment verification request received', {
+      userId,
+      razorpayOrderId: normalizedOrderId,
+      razorpaySubscriptionId: normalizedSubscriptionId,
+      razorpayPaymentId: normalizedPaymentId,
+      hasSignature: !!normalizedSignature
+    });
 
-    res.success(result, 'Payment verified successfully');
-
-  } catch (error) {
-    logger.error('Payment verification error:', error);
-
-    if (error.response?.status === 400) {
-      return res.status(400).error([error.response.data.message || 'Invalid verification data'], 'Payment verification failed');
+    // Validate required fields (same as Milo backend)
+    if (!normalizedPaymentId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required field: razorpayPaymentId is required'
+      });
     }
 
-    res.status(500).error(['Failed to verify payment'], 'Internal server error');
+    // Smart detection (same as Milo backend)
+    let actualOrderId = normalizedOrderId;
+    let actualSubscriptionId = normalizedSubscriptionId;
+
+    // If razorpayOrderId starts with 'sub_', it's actually a subscription ID
+    if (normalizedOrderId && normalizedOrderId.startsWith('sub_')) {
+      actualSubscriptionId = normalizedOrderId;
+      actualOrderId = null;
+      logger.info('Detected subscription ID in razorpayOrderId field', {
+        userId,
+        originalOrderId: normalizedOrderId,
+        correctedSubscriptionId: actualSubscriptionId
+      });
+    }
+
+    const isSubscriptionPayment = !!actualSubscriptionId;
+    const isOrderPayment = !!actualOrderId;
+
+    // Validate payment identifiers (same as Milo backend)
+    if (!isSubscriptionPayment && !isOrderPayment) {
+      logger.error('Missing payment identifier', {
+        userId,
+        actualOrderId,
+        actualSubscriptionId
+      });
+      return res.status(400).json({
+        success: false,
+        error: 'Missing payment identifier: either razorpayOrderId or razorpaySubscriptionId is required'
+      });
+    }
+
+    if (isSubscriptionPayment && isOrderPayment) {
+      logger.error('Conflicting payment identifiers', {
+        userId,
+        razorpayOrderId: normalizedOrderId,
+        razorpaySubscriptionId: normalizedSubscriptionId,
+        actualOrderId,
+        actualSubscriptionId
+      });
+      return res.status(400).json({
+        success: false,
+        error: 'Conflicting payment identifiers: provide either razorpayOrderId or razorpaySubscriptionId, not both'
+      });
+    }
+
+    logger.info('Payment type determined', {
+      userId,
+      isSubscriptionPayment,
+      isOrderPayment,
+      paymentIdentifier: isOrderPayment ? actualOrderId : actualSubscriptionId
+    });
+
+    // Try to verify with payment microservice first
+    let verificationResult = null;
+    try {
+      const verificationData = {
+        razorpayOrderId: actualOrderId,
+        razorpaySubscriptionId: actualSubscriptionId,
+        razorpayPaymentId: normalizedPaymentId,
+        razorpaySignature: normalizedSignature
+      };
+
+      verificationResult = await paymentService.verifyPayment(userId, verificationData);
+      logger.info('Payment microservice verification successful', verificationResult);
+    } catch (verifyError) {
+      logger.warn('Payment microservice verification failed', verifyError.message);
+
+      // For subscription payments, allow manual update if microservice fails
+      if (isSubscriptionPayment && req.body.forceUpdate) {
+        logger.info('Force update requested for subscription payment');
+      } else {
+        return res.status(400).json({
+          success: false,
+          error: 'Payment verification failed',
+          details: verifyError.message
+        });
+      }
+    }
+
+    // Update subscription if it's a subscription payment
+    if (isSubscriptionPayment && (verificationResult?.success || req.body.forceUpdate)) {
+      try {
+        const subscriptionUpdate = {
+          status: 'active',
+          provider: 'razorpay',
+          providerRef: actualSubscriptionId,
+          razorpaySubscriptionId: actualSubscriptionId,
+          plan: req.body.planType || 'monthly'
+        };
+
+        // Set billing date
+        const billingDate = new Date();
+        if (req.body.planType === 'yearly') {
+          billingDate.setFullYear(billingDate.getFullYear() + 1);
+        } else {
+          billingDate.setMonth(billingDate.getMonth() + 1);
+        }
+        subscriptionUpdate.nextBillingDate = billingDate;
+        subscriptionUpdate.currentPeriodEnd = billingDate;
+
+        if (req.body.trialUsed !== undefined) {
+          subscriptionUpdate.trialUsed = req.body.trialUsed;
+        }
+
+        const updatedUser = await paymentService.updateUserSubscription(userId, subscriptionUpdate);
+
+        logger.info('User subscription updated after verification', { userId });
+
+        return res.json({
+          success: true,
+          message: 'Payment verified and subscription updated successfully',
+          data: {
+            userId: updatedUser._id,
+            subscription: updatedUser.subscription,
+            verificationResult: verificationResult?.data || null
+          }
+        });
+
+      } catch (updateError) {
+        logger.error('Failed to update user subscription', updateError);
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to update subscription',
+          details: updateError.message
+        });
+      }
+    }
+
+    // For order payments or successful verification without subscription update
+    return res.json({
+      success: true,
+      message: 'Payment verified successfully',
+      data: {
+        verificationResult: verificationResult?.data || null
+      }
+    });
+
+  } catch (error) {
+    logger.error('Payment verification failed', {
+      userId: req.userId,
+      error: error.message,
+      stack: error.stack
+    });
+
+    return res.status(500).json({
+      success: false,
+      error: 'Payment verification failed',
+      details: error.message
+    });
+  }
+});
+
+// POST /payment/verify-manual - Manual payment verification and DB update
+router.post('/verify-manual', authenticate, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const {
+      razorpaySubscriptionId,
+      razorpayOrderId,
+      planType = 'monthly',
+      forceUpdate = false
+    } = req.body;
+
+    if (!razorpaySubscriptionId && !razorpayOrderId) {
+      return res.status(400).error(['Either razorpaySubscriptionId or razorpayOrderId is required'], 'Invalid request');
+    }
+
+    logger.info(`Manual payment verification requested for user ${userId}:`, {
+      razorpaySubscriptionId,
+      razorpayOrderId,
+      planType,
+      forceUpdate
+    });
+
+    // First try to verify with payment microservice
+    let verificationResult = null;
+    try {
+      const verificationData = {};
+      if (razorpaySubscriptionId) verificationData.razorpaySubscriptionId = razorpaySubscriptionId;
+      if (razorpayOrderId) verificationData.razorpayOrderId = razorpayOrderId;
+
+      verificationResult = await paymentService.verifyPayment(userId, verificationData);
+      logger.info(`Payment microservice verification result:`, verificationResult);
+    } catch (verifyError) {
+      logger.warn(`Payment microservice verification failed:`, verifyError.message);
+      if (!forceUpdate) {
+        return res.status(400).error([`Payment verification failed: ${verifyError.message}`], 'Verification failed');
+      }
+    }
+
+    // Update user subscription in database
+    const subscriptionUpdate = {
+      status: 'active',
+      plan: planType === 'yearly' ? 'yearly' : 'monthly',
+      provider: 'razorpay',
+      providerRef: razorpaySubscriptionId || razorpayOrderId
+    };
+
+    if (razorpaySubscriptionId) {
+      subscriptionUpdate.razorpaySubscriptionId = razorpaySubscriptionId;
+    }
+
+    // Set billing dates based on plan type
+    const now = new Date();
+    const billingDate = new Date(now);
+    if (planType === 'yearly') {
+      billingDate.setFullYear(billingDate.getFullYear() + 1);
+    } else {
+      billingDate.setMonth(billingDate.getMonth() + 1);
+    }
+    subscriptionUpdate.nextBillingDate = billingDate;
+    subscriptionUpdate.currentPeriodEnd = billingDate;
+
+    const updatedUser = await paymentService.updateUserSubscription(userId, subscriptionUpdate);
+
+    logger.info(`Manual payment verification completed for user ${userId}`);
+
+    res.success({
+      user: {
+        id: updatedUser._id,
+        email: updatedUser.email,
+        subscription: updatedUser.subscription
+      },
+      verificationResult: verificationResult?.data || null,
+      message: 'Payment verified and subscription updated successfully'
+    }, 'Manual verification completed');
+
+  } catch (error) {
+    logger.error('Manual payment verification error:', error);
+    res.status(500).error(['Failed to verify payment manually'], 'Internal server error');
   }
 });
 
@@ -222,13 +487,21 @@ router.post('/callback', async (req, res) => {
     if (status === 'paid' || status === 'active') {
       // Handle successful payment
       if (subscriptionId) {
-        // Update user subscription status
+        // Extract additional data from paymentContext
+        const { planType, trialUsed, nextBillingDate } = req.body;
+
+        // Update user subscription status with comprehensive data
         await paymentService.updateUserSubscription(userId, {
-          status: status,
+          status: 'active',
+          plan: planType === 'trial' ? 'trial' : (planType || 'premium'),
+          provider: 'razorpay',
           providerRef: razorpaySubscriptionId,
-          provider: 'razorpay'
+          razorpaySubscriptionId: razorpaySubscriptionId,
+          trialUsed: trialUsed || false,
+          nextBillingDate: nextBillingDate ? new Date(nextBillingDate) : null,
+          currentPeriodEnd: nextBillingDate ? new Date(nextBillingDate) : null
         });
-        logger.info(`Subscription ${subscriptionId} activated for user ${userId}`);
+        logger.info(`Subscription ${subscriptionId} activated for user ${userId} with plan: ${planType}`);
       }
 
       if (orderId) {
@@ -239,6 +512,13 @@ router.post('/callback', async (req, res) => {
     } else if (status === 'failed' || status === 'cancelled') {
       // Handle failed/cancelled payment
       logger.warn(`Payment ${status} for user ${userId}:`, { orderId, subscriptionId });
+
+      // Update subscription status to reflect failure
+      if (subscriptionId) {
+        await paymentService.updateUserSubscription(userId, {
+          status: status === 'failed' ? 'inactive' : 'cancelled'
+        });
+      }
     }
 
     res.json({

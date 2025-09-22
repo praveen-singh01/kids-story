@@ -216,6 +216,25 @@ router.post('/me/cancel', authenticate, async (req, res) => {
   }
 });
 
+// GET /subscriptions/trial-eligibility - Check if user is eligible for trial
+router.get('/trial-eligibility', authenticate, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const packageId = 'com.sunostories.app';
+
+    logger.info(`Checking trial eligibility for user ${userId}`);
+
+    // Check trial eligibility via payment microservice
+    const eligibilityResult = await paymentService.checkTrialEligibility(userId, packageId);
+
+    res.success(eligibilityResult.data, 'Trial eligibility checked successfully');
+
+  } catch (error) {
+    logger.error('Trial eligibility check error:', error);
+    res.status(500).error(['Failed to check trial eligibility'], 'Internal server error');
+  }
+});
+
 // GET /subscriptions/plans - Get available subscription plans (TRIAL-AWARE)
 router.get('/plans', authenticate, async (req, res) => {
   try {

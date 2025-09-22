@@ -305,13 +305,24 @@ class PaymentServiceClient {
         throw new Error('User not found');
       }
 
+      // Merge subscription data properly
+      const currentSubscription = user.subscription || {};
       user.subscription = {
-        ...user.subscription,
-        ...subscriptionData
+        ...currentSubscription,
+        ...subscriptionData,
+        // Ensure we set the correct plan based on status and provider
+        plan: subscriptionData.plan || (subscriptionData.status === 'active' ? 'premium' : currentSubscription.plan),
+        // Set current period end if not provided
+        currentPeriodEnd: subscriptionData.currentPeriodEnd || subscriptionData.nextBillingDate || currentSubscription.currentPeriodEnd
       };
 
       await user.save();
-      logger.info(`User subscription updated for user ${userId}`);
+      logger.info(`User subscription updated for user ${userId}:`, {
+        plan: user.subscription.plan,
+        status: user.subscription.status,
+        provider: user.subscription.provider,
+        providerRef: user.subscription.providerRef
+      });
       return user;
     } catch (error) {
       logger.error('Update user subscription error:', error);
