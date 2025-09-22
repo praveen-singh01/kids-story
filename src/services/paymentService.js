@@ -383,6 +383,56 @@ class PaymentServiceClient {
   }
 
   /**
+   * Cancel subscription via payment microservice
+   * @param {string} userId - User ID
+   * @param {string} razorpaySubscriptionId - Razorpay subscription ID
+   * @param {Object} options - Cancellation options
+   * @returns {Promise<Object>} Cancellation result
+   */
+  async cancelSubscription(userId, razorpaySubscriptionId, options = {}) {
+    logger.info('Cancelling subscription via payment microservice', {
+      userId,
+      razorpaySubscriptionId,
+      options,
+      packageId: this.packageId
+    });
+
+    try {
+      const response = await axios.post(`${this.baseUrl}/api/payment/subscription/${razorpaySubscriptionId}/cancel`, {
+        cancelAtCycleEnd: !options.immediate, // immediate = false means cancel at cycle end
+        reason: options.reason || 'user_requested'
+      }, {
+        headers: this.getHeaders(userId),
+        timeout: 30000
+      });
+
+      logger.info('Subscription cancelled successfully via payment microservice', {
+        userId,
+        razorpaySubscriptionId,
+        result: response.data
+      });
+
+      return {
+        success: response.data.success,
+        data: response.data.data,
+        message: response.data.message
+      };
+    } catch (error) {
+      logger.error('Failed to cancel subscription via payment microservice', {
+        userId,
+        razorpaySubscriptionId,
+        error: error.response?.data || error.message
+      });
+
+      throw new Error(
+        error.response?.data?.error?.message ||
+        error.response?.data?.message ||
+        'Failed to cancel subscription'
+      );
+    }
+  }
+
+  /**
    * Get trial configuration for the package
    * @returns {Promise<Object>} Trial configuration result
    */

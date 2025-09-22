@@ -203,9 +203,10 @@ router.get('/premium-status', authenticate, async (req, res) => {
     }
 
     // Determine premium status for Flutter frontend
+    // Enhanced check: only active subscriptions grant premium access
+    // Cancelled, inactive, expired, halted, or suspended subscriptions = no premium access
     const isPremium = user.subscription &&
-                     user.subscription.status === 'active' &&
-                     ['monthly', 'yearly', 'premium', 'trial'].includes(user.subscription.plan);
+                     user.subscription.status === 'active';
 
     const premiumDetails = {
       isPremium: isPremium,
@@ -213,16 +214,97 @@ router.get('/premium-status', authenticate, async (req, res) => {
       plan: user.subscription?.plan || null,
       status: user.subscription?.status || 'inactive',
       nextBillingDate: user.subscription?.nextBillingDate || null,
-      trialUsed: user.subscription?.trialUsed || false
+      currentPeriodEnd: user.subscription?.currentPeriodEnd || null,
+      trialUsed: user.subscription?.trialUsed || false,
+      cancelledAt: user.subscription?.cancelledAt || null,
+      razorpaySubscriptionId: user.subscription?.razorpaySubscriptionId || null
     };
 
-    logger.info(`Premium status checked for user ${userId}:`, { isPremium, plan: premiumDetails.plan });
+    logger.info(`Premium status checked for user ${userId}:`, {
+      isPremium,
+      plan: premiumDetails.plan,
+      status: premiumDetails.status
+    });
 
     res.success(premiumDetails, 'Premium status retrieved successfully');
 
   } catch (error) {
     logger.error('Premium status check error:', error);
     res.status(500).error(['Failed to check premium status'], 'Internal server error');
+  }
+});
+
+// POST /payment/cancel-subscription - Cancel user subscription
+router.post('/cancel-subscription', authenticate, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { immediate = false } = req.body; // immediate cancellation or end of billing period
+
+    // Get user data
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).error(['User not found'], 'Subscription cancellation failed');
+    }
+
+    if (!user.subscription || !user.subscription.razorpaySubscriptionId) {
+      return res.status(400).error(['No active subscription found'], 'Subscription cancellation failed');
+    }
+
+    logger.info(`Subscription cancellation requested for user ${userId}:`, {
+      razorpaySubscriptionId: user.subscription.razorpaySubscriptionId,
+      immediate,
+      currentStatus: user.subscription.status
+    });
+
+    // Cancel subscription via payment microservice
+    try {
+      const cancellationResult = await paymentService.cancelSubscription(
+        userId,
+        user.subscription.razorpaySubscriptionId,
+        { immediate }
+      );
+
+      logger.info('Payment microservice cancellation result:', cancellationResult);
+    } catch (cancelError) {
+      logger.warn('Payment microservice cancellation failed:', cancelError.message);
+      // Continue with local cancellation even if microservice fails
+    }
+
+    // Update local subscription status
+    const cancellationUpdate = {
+      status: immediate ? 'cancelled' : 'pending_cancellation',
+      cancelledAt: new Date(),
+      cancelReason: req.body.reason || 'user_requested'
+    };
+
+    // If immediate cancellation, revoke premium access immediately
+    if (immediate) {
+      cancellationUpdate.currentPeriodEnd = new Date();
+    }
+
+    const updatedUser = await paymentService.updateUserSubscription(userId, cancellationUpdate);
+
+    // Determine premium status after cancellation
+    const isPremium = updatedUser.subscription &&
+                     updatedUser.subscription.status === 'active';
+
+    logger.info(`Subscription cancelled for user ${userId}:`, {
+      immediate,
+      newStatus: updatedUser.subscription.status,
+      isPremium
+    });
+
+    res.success({
+      isPremium: isPremium,
+      subscription: updatedUser.subscription,
+      message: immediate ?
+        'Subscription cancelled immediately. Premium access revoked.' :
+        'Subscription will be cancelled at the end of current billing period.'
+    }, 'Subscription cancellation processed successfully');
+
+  } catch (error) {
+    logger.error('Subscription cancellation error:', error);
+    res.status(500).error(['Failed to cancel subscription'], 'Internal server error');
   }
 });
 
@@ -373,9 +455,9 @@ router.post('/verify', authenticate, async (req, res) => {
         logger.info('User subscription updated after verification', { userId });
 
         // Determine premium status for Flutter frontend
+        // Simple check: user has active subscription = premium access
         const isPremium = updatedUser.subscription &&
-                         updatedUser.subscription.status === 'active' &&
-                         ['monthly', 'yearly', 'premium', 'trial'].includes(updatedUser.subscription.plan);
+                         updatedUser.subscription.status === 'active';
 
         return res.json({
           success: true,
@@ -401,9 +483,9 @@ router.post('/verify', authenticate, async (req, res) => {
     // For order payments or successful verification without subscription update
     // Get user data to check premium status
     const user = await User.findById(userId);
+    // Simple check: user has active subscription = premium access
     const isPremium = user?.subscription &&
-                     user.subscription.status === 'active' &&
-                     ['monthly', 'yearly', 'premium', 'trial'].includes(user.subscription.plan);
+                     user.subscription.status === 'active';
 
     return res.json({
       success: true,
@@ -495,9 +577,9 @@ router.post('/verify-manual', authenticate, async (req, res) => {
     logger.info(`Manual payment verification completed for user ${userId}`);
 
     // Determine premium status for Flutter frontend
+    // Simple check: user has active subscription = premium access
     const isPremium = updatedUser.subscription &&
-                     updatedUser.subscription.status === 'active' &&
-                     ['monthly', 'yearly', 'premium', 'trial'].includes(updatedUser.subscription.plan);
+                     updatedUser.subscription.status === 'active';
 
     res.success({
       isPremium: isPremium, // Flag for Flutter frontend to enable premium features

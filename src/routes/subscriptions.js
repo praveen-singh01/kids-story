@@ -354,4 +354,148 @@ router.get('/plans', authenticate, async (req, res) => {
   }
 });
 
+// POST /subscriptions/callback - Handle payment microservice callbacks
+router.post('/callback', async (req, res) => {
+  try {
+    const { event, userId, sourceApp, data, timestamp } = req.body;
+
+    logger.info('Payment microservice callback received:', {
+      event,
+      userId,
+      sourceApp,
+      data,
+      timestamp
+    });
+
+    // Validate callback payload
+    if (!event || !userId || !data) {
+      logger.warn('Invalid callback payload received:', req.body);
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid callback payload'
+      });
+    }
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      logger.warn(`User not found for callback: ${userId}`);
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Handle different subscription events
+    let subscriptionUpdate = {};
+    let logMessage = '';
+
+    switch (event) {
+      case 'subscription.activated':
+        subscriptionUpdate = {
+          status: 'active',
+          razorpaySubscriptionId: data.subscriptionId,
+          plan: data.planType || 'monthly',
+          provider: 'razorpay',
+          nextBillingDate: data.nextBillingDate ? new Date(data.nextBillingDate) : null,
+          currentPeriodEnd: data.currentPeriodEnd ? new Date(data.currentPeriodEnd) : null,
+          trialUsed: data.trialUsed || false,
+          activatedAt: new Date()
+        };
+        logMessage = 'Subscription activated';
+        break;
+
+      case 'subscription.cancelled':
+        subscriptionUpdate = {
+          status: 'cancelled',
+          cancelledAt: data.endedAt ? new Date(data.endedAt) : new Date(),
+          currentPeriodEnd: data.endedAt ? new Date(data.endedAt) : new Date()
+        };
+        logMessage = 'Subscription cancelled';
+        break;
+
+      case 'subscription.halted':
+        subscriptionUpdate = {
+          status: 'inactive', // Use inactive instead of halted for consistency
+          haltedAt: data.haltedAt ? new Date(data.haltedAt) : new Date()
+        };
+        logMessage = 'Subscription halted due to payment failure';
+        break;
+
+      case 'subscription.completed':
+        subscriptionUpdate = {
+          status: 'completed',
+          completedAt: data.completedAt ? new Date(data.completedAt) : new Date()
+        };
+        logMessage = 'Subscription completed';
+        break;
+
+      case 'invoice.paid':
+        // Update billing dates for recurring payments
+        subscriptionUpdate = {
+          status: 'active',
+          nextBillingDate: data.nextBillingDate ? new Date(data.nextBillingDate) : null,
+          currentPeriodEnd: data.currentPeriodEnd ? new Date(data.currentPeriodEnd) : null,
+          lastPaymentDate: new Date()
+        };
+        logMessage = 'Recurring payment processed';
+        break;
+
+      default:
+        logger.warn(`Unhandled callback event: ${event}`);
+        return res.json({
+          success: true,
+          message: 'Event acknowledged but not processed'
+        });
+    }
+
+    // Update user subscription - merge with existing subscription data
+    const currentSubscription = user.subscription || {};
+    const newSubscription = {
+      ...currentSubscription,
+      ...subscriptionUpdate
+    };
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          subscription: newSubscription
+        }
+      },
+      { new: true }
+    );
+
+    // Determine premium status after update
+    const isPremium = updatedUser.subscription &&
+                     updatedUser.subscription.status === 'active';
+
+    logger.info(`${logMessage} for user ${userId}:`, {
+      event,
+      subscriptionUpdate,
+      currentSubscriptionStatus: updatedUser.subscription?.status,
+      isPremium,
+      fullSubscription: updatedUser.subscription
+    });
+
+    res.json({
+      success: true,
+      message: `${logMessage} successfully`,
+      data: {
+        userId,
+        isPremium,
+        subscriptionStatus: updatedUser.subscription.status,
+        event
+      }
+    });
+
+  } catch (error) {
+    logger.error('Subscription callback error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to process callback'
+    });
+  }
+});
+
 module.exports = router;
