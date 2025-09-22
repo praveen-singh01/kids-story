@@ -184,10 +184,45 @@ router.get('/subscriptions', authenticate, async (req, res) => {
     const subscriptions = await paymentService.getUserSubscriptions(userId, page, limit);
 
     res.success(subscriptions, 'Subscriptions retrieved successfully');
-    
+
   } catch (error) {
     logger.error('Get subscriptions error:', error);
     res.status(500).error(['Failed to retrieve subscriptions'], 'Internal server error');
+  }
+});
+
+// GET /payment/premium-status - Check if user has premium access
+router.get('/premium-status', authenticate, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    // Get user data to check premium status
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).error(['User not found'], 'Premium status check failed');
+    }
+
+    // Determine premium status for Flutter frontend
+    const isPremium = user.subscription &&
+                     user.subscription.status === 'active' &&
+                     ['monthly', 'yearly', 'premium', 'trial'].includes(user.subscription.plan);
+
+    const premiumDetails = {
+      isPremium: isPremium,
+      subscription: user.subscription || null,
+      plan: user.subscription?.plan || null,
+      status: user.subscription?.status || 'inactive',
+      nextBillingDate: user.subscription?.nextBillingDate || null,
+      trialUsed: user.subscription?.trialUsed || false
+    };
+
+    logger.info(`Premium status checked for user ${userId}:`, { isPremium, plan: premiumDetails.plan });
+
+    res.success(premiumDetails, 'Premium status retrieved successfully');
+
+  } catch (error) {
+    logger.error('Premium status check error:', error);
+    res.status(500).error(['Failed to check premium status'], 'Internal server error');
   }
 });
 
@@ -337,9 +372,15 @@ router.post('/verify', authenticate, async (req, res) => {
 
         logger.info('User subscription updated after verification', { userId });
 
+        // Determine premium status for Flutter frontend
+        const isPremium = updatedUser.subscription &&
+                         updatedUser.subscription.status === 'active' &&
+                         ['monthly', 'yearly', 'premium', 'trial'].includes(updatedUser.subscription.plan);
+
         return res.json({
           success: true,
           message: 'Payment verified and subscription updated successfully',
+          isPremium: isPremium, // Flag for Flutter frontend to enable premium features
           data: {
             userId: updatedUser._id,
             subscription: updatedUser.subscription,
@@ -358,9 +399,16 @@ router.post('/verify', authenticate, async (req, res) => {
     }
 
     // For order payments or successful verification without subscription update
+    // Get user data to check premium status
+    const user = await User.findById(userId);
+    const isPremium = user?.subscription &&
+                     user.subscription.status === 'active' &&
+                     ['monthly', 'yearly', 'premium', 'trial'].includes(user.subscription.plan);
+
     return res.json({
       success: true,
       message: 'Payment verified successfully',
+      isPremium: isPremium, // Flag for Flutter frontend to enable premium features
       data: {
         verificationResult: verificationResult?.data || null
       }
@@ -446,7 +494,13 @@ router.post('/verify-manual', authenticate, async (req, res) => {
 
     logger.info(`Manual payment verification completed for user ${userId}`);
 
+    // Determine premium status for Flutter frontend
+    const isPremium = updatedUser.subscription &&
+                     updatedUser.subscription.status === 'active' &&
+                     ['monthly', 'yearly', 'premium', 'trial'].includes(updatedUser.subscription.plan);
+
     res.success({
+      isPremium: isPremium, // Flag for Flutter frontend to enable premium features
       user: {
         id: updatedUser._id,
         email: updatedUser.email,

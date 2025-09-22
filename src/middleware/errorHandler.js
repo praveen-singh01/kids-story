@@ -56,7 +56,11 @@ const errorHandler = (err, req, res, next) => {
   const message = statusCode === 500 ? 'Internal Server Error' : error.message;
   const errors = statusCode === 500 ? ['Something went wrong'] : [message];
 
-  res.status(statusCode).error(errors, message);
+  res.status(statusCode).json({
+    success: false,
+    errors,
+    message
+  });
 };
 
 module.exports = errorHandler;
