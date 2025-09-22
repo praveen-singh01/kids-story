@@ -4,12 +4,12 @@ const bcrypt = require('bcryptjs');
 const subscriptionSchema = new mongoose.Schema({
   plan: {
     type: String,
-    enum: ['free', 'monthly', 'yearly', 'premium'],
+    enum: ['free', 'premium', 'trial', 'monthly', 'yearly'],
     default: 'free'
   },
   status: {
     type: String,
-    enum: ['active', 'inactive', 'cancelled'],
+    enum: ['active', 'inactive', 'cancelled', 'pending', 'expired'],
     default: 'active'
   },
   currentPeriodEnd: {
@@ -25,6 +25,7 @@ const subscriptionSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  // Trial support fields
   trialUsed: {
     type: Boolean,
     default: false
@@ -33,6 +34,7 @@ const subscriptionSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  // Razorpay specific fields
   razorpaySubscriptionId: {
     type: String,
     default: null
