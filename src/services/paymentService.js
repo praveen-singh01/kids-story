@@ -320,6 +320,43 @@ class PaymentServiceClient {
   }
 
   /**
+   * Handle trial payment verification and update subscription
+   */
+  async handleTrialPaymentVerification(userId, paymentData) {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // Update subscription after successful trial payment
+      const trialEndDate = new Date();
+      trialEndDate.setDate(trialEndDate.getDate() + 30); // 30 days trial
+
+      user.subscription = {
+        ...user.subscription,
+        plan: 'monthly', // Set to monthly plan after trial
+        status: 'active',
+        provider: 'razorpay',
+        providerRef: paymentData.razorpaySubscriptionId || paymentData.subscriptionId,
+        trialUsed: false, // Set to false after successful trial payment
+        trialEndDate: trialEndDate,
+        currentPeriodEnd: trialEndDate,
+        razorpaySubscriptionId: paymentData.razorpaySubscriptionId,
+        razorpayCustomerId: paymentData.razorpayCustomerId,
+        nextBillingDate: trialEndDate
+      };
+
+      await user.save();
+      logger.info(`Trial payment verified and subscription activated for user ${userId}`);
+      return user;
+    } catch (error) {
+      logger.error('Handle trial payment verification error:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Update order status in our database
    */
   async updateOrderStatus(orderId, status) {

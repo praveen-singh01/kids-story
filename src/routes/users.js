@@ -101,9 +101,19 @@ router.get('/me', authenticate, async (req, res) => {
     // User is already attached to req by authenticate middleware
     const user = req.user;
 
+    // Determine if user is premium based on subscription
+    const isPremium = user.subscription &&
+                     user.subscription.status === 'active' &&
+                     (user.subscription.plan === 'premium' ||
+                      user.subscription.plan === 'monthly' ||
+                      user.subscription.plan === 'yearly') &&
+                     (!user.subscription.currentPeriodEnd ||
+                      new Date() < user.subscription.currentPeriodEnd);
+
     // Ensure preferences object exists with default values
     const userResponse = {
       ...user.toJSON(),
+      isPremium: isPremium,
       preferences: {
         language: user.preferences?.language || 'en'
       },

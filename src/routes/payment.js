@@ -222,13 +222,33 @@ router.post('/callback', async (req, res) => {
     if (status === 'paid' || status === 'active') {
       // Handle successful payment
       if (subscriptionId) {
-        // Update user subscription status
-        await paymentService.updateUserSubscription(userId, {
-          status: status,
-          providerRef: razorpaySubscriptionId,
-          provider: 'razorpay'
-        });
-        logger.info(`Subscription ${subscriptionId} activated for user ${userId}`);
+        // Check if this is a trial payment based on payment context
+        const isTrialPayment = paymentContext?.metadata?.planType === 'trial' ||
+                              paymentContext?.isTrial === true ||
+                              (paymentContext?.amount && paymentContext.amount <= 500); // ₹5 or less indicates trial
+
+        if (isTrialPayment) {
+          // Handle trial payment verification
+          await paymentService.handleTrialPaymentVerification(userId, {
+            subscriptionId,
+            razorpaySubscriptionId,
+            razorpayCustomerId: paymentContext?.razorpayCustomerId,
+            status: 'active'
+          });
+          logger.info(`Trial payment verified and subscription activated for user ${userId}`);
+        } else {
+          // Handle regular subscription payment
+          await paymentService.updateUserSubscription(userId, {
+            status: status,
+            providerRef: razorpaySubscriptionId,
+            provider: 'razorpay',
+            razorpaySubscriptionId: razorpaySubscriptionId,
+            razorpayCustomerId: paymentContext?.razorpayCustomerId,
+            plan: paymentContext?.metadata?.planType || 'monthly',
+            trialUsed: false // Set to false after successful payment
+          });
+          logger.info(`Subscription ${subscriptionId} activated for user ${userId}`);
+        }
       }
 
       if (orderId) {
@@ -238,6 +258,14 @@ router.post('/callback', async (req, res) => {
       }
     } else if (status === 'failed' || status === 'cancelled') {
       // Handle failed/cancelled payment
+      if (status === 'cancelled' && subscriptionId) {
+        // Handle subscription cancellation
+        await paymentService.updateUserSubscription(userId, {
+          status: 'cancelled',
+          cancelledAt: new Date()
+        });
+        logger.info(`Subscription cancelled for user ${userId}: ${subscriptionId}`);
+      }
       logger.warn(`Payment ${status} for user ${userId}:`, { orderId, subscriptionId });
     }
 
