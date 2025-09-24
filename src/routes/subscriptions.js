@@ -431,6 +431,21 @@ router.post('/callback', async (req, res) => {
         break;
 
       case 'invoice.paid':
+        subscriptionUpdate = {
+          status: 'active',
+          razorpaySubscriptionId: data.razorpaySubscriptionId || data.subscriptionId,
+          plan: data.planType || 'monthly',
+          provider: 'razorpay',
+          nextBillingDate: data.nextBillingDate ? new Date(data.nextBillingDate) : null,
+          currentPeriodEnd: data.currentPeriodEnd ? new Date(data.currentPeriodEnd) : null,
+          trialUsed: data.trialUsed || false,
+          lastPaymentDate: new Date(),
+          activatedAt: new Date()
+        };
+        logMessage = 'Invoice paid - subscription activated';
+        break;
+
+      case 'invoice.paid':
         // Update billing dates for recurring payments
         subscriptionUpdate = {
           status: 'active',
