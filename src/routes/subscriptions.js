@@ -192,8 +192,43 @@ router.post('/me/cancel', authenticate, async (req, res) => {
     const userId = req.userId;
     const user = await User.findById(userId);
 
+    logger.info('Starting subscription cancellation for user', {
+      userId,
+      currentSubscription: user.subscription
+    });
+
     if (!user.subscription || user.subscription.status !== 'active') {
       return res.status(404).error(['No active subscription found'], 'Subscription cancellation failed');
+    }
+
+    // Enhanced payment microservice cancellation with multiple strategies
+    let cancellationSuccessful = false;
+
+    // Strategy 1: Cancel all user subscriptions (most reliable for orphaned subscriptions)
+    try {
+      await paymentService.cancelAllUserSubscriptions(userId);
+      logger.info(`✅ Successfully cancelled all subscriptions for user: ${userId}`);
+      cancellationSuccessful = true;
+    } catch (userCancelError) {
+      logger.warn(`⚠️ Failed to cancel by user ID: ${userCancelError.message}`);
+
+      // Strategy 2: Cancel by Razorpay subscription ID (fallback)
+      if (user.subscription.razorpaySubscriptionId) {
+        try {
+          await paymentService.cancelSubscriptionByRazorpayId(
+            userId,
+            user.subscription.razorpaySubscriptionId
+          );
+          logger.info(`✅ Subscription cancelled by Razorpay ID: ${user.subscription.razorpaySubscriptionId}`);
+          cancellationSuccessful = true;
+        } catch (razorpayCancelError) {
+          logger.error(`❌ Failed to cancel by Razorpay ID: ${razorpayCancelError.message}`);
+        }
+      }
+    }
+
+    if (!cancellationSuccessful) {
+      logger.warn(`⚠️ Could not cancel subscription via payment microservice for user ${userId} - proceeding with local cancellation`);
     }
 
     // Update local subscription status to cancelled
@@ -202,12 +237,13 @@ router.post('/me/cancel', authenticate, async (req, res) => {
       cancelledAt: new Date()
     });
 
-    logger.info(`Subscription cancelled for user ${userId}`);
+    logger.info(`✅ Subscription cancelled successfully for user ${userId}`);
 
     res.success({
       status: 'cancelled',
       cancelledAt: new Date(),
-      message: 'Subscription has been cancelled. Access will continue until the current period ends.'
+      message: 'Subscription has been cancelled successfully. Access will continue until the current period ends.',
+      paymentMicroserviceCancelled: cancellationSuccessful
     }, 'Subscription cancelled successfully');
 
   } catch (error) {

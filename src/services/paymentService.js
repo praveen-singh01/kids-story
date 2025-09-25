@@ -433,6 +433,96 @@ class PaymentServiceClient {
   }
 
   /**
+   * Cancel all subscriptions for a user (for account deletion or comprehensive cancellation)
+   * @param {string} userId - User ID
+   * @returns {Promise<Object>} Cancellation result
+   */
+  async cancelAllUserSubscriptions(userId) {
+    logger.info('Cancelling all subscriptions for user via payment microservice', {
+      userId,
+      packageId: this.packageId
+    });
+
+    try {
+      const response = await axios.post(`${this.baseUrl}/api/payment/user/${userId}/cancel-all-subscriptions`, {
+        packageName: this.packageId
+      }, {
+        headers: this.getHeaders(userId),
+        timeout: 30000
+      });
+
+      logger.info('All user subscriptions cancelled successfully', {
+        userId,
+        cancelledCount: response.data?.data?.cancelledCount || 0
+      });
+
+      return {
+        success: response.data.success,
+        data: response.data.data,
+        message: response.data.message
+      };
+    } catch (error) {
+      logger.error('Failed to cancel all user subscriptions', {
+        userId,
+        error: error.response?.data || error.message
+      });
+
+      throw new Error(
+        error.response?.data?.error?.message ||
+        error.response?.data?.message ||
+        'Failed to cancel all user subscriptions'
+      );
+    }
+  }
+
+  /**
+   * Cancel subscription by Razorpay subscription ID (fallback method)
+   * @param {string} userId - User ID
+   * @param {string} razorpaySubscriptionId - Razorpay subscription ID
+   * @returns {Promise<Object>} Cancellation result
+   */
+  async cancelSubscriptionByRazorpayId(userId, razorpaySubscriptionId) {
+    logger.info('Cancelling subscription by Razorpay ID via payment microservice', {
+      userId,
+      razorpaySubscriptionId,
+      packageId: this.packageId
+    });
+
+    try {
+      const response = await axios.post(`${this.baseUrl}/api/payment/subscription/cancel-by-razorpay-id`, {
+        razorpaySubscriptionId,
+        packageName: this.packageId
+      }, {
+        headers: this.getHeaders(userId),
+        timeout: 30000
+      });
+
+      logger.info('Subscription cancelled by Razorpay ID successfully', {
+        userId,
+        razorpaySubscriptionId
+      });
+
+      return {
+        success: response.data.success,
+        data: response.data.data,
+        message: response.data.message
+      };
+    } catch (error) {
+      logger.error('Failed to cancel subscription by Razorpay ID', {
+        userId,
+        razorpaySubscriptionId,
+        error: error.response?.data || error.message
+      });
+
+      throw new Error(
+        error.response?.data?.error?.message ||
+        error.response?.data?.message ||
+        'Failed to cancel subscription by Razorpay ID'
+      );
+    }
+  }
+
+  /**
    * Get trial configuration for the package
    * @returns {Promise<Object>} Trial configuration result
    */
