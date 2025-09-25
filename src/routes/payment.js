@@ -652,6 +652,33 @@ router.post('/callback', async (req, res) => {
           currentPeriodEnd: nextBillingDate ? new Date(nextBillingDate) : null
         });
 
+        // ✅ CRITICAL FIX: Update trialUsed flag in payment microservice when user pays full amount
+        if (status === 'active' && trialUsed === false) {
+          logger.info('🎯 CRITICAL FIX: User paid full amount but trialUsed is still false - updating payment microservice', {
+            userId,
+            status,
+            trialUsed,
+            action: 'update_trial_used_flag'
+          });
+
+          try {
+            const updateResult = await paymentService.updateTrialUsedFlag(userId, 'com.kids.story', true);
+
+            logger.info('✅ CRITICAL FIX SUCCESS: Trial used flag updated in payment microservice', {
+              userId,
+              updateResult: updateResult?.data,
+              action: 'trial_used_flag_updated'
+            });
+          } catch (error) {
+            logger.error('❌ CRITICAL FIX FAILED: Could not update trial used flag in payment microservice', {
+              userId,
+              error: error.message,
+              action: 'trial_used_flag_update_failed'
+            });
+            // Don't throw error - continue with callback processing
+          }
+        }
+
         logger.info(`Trial-aware subscription activated for user ${userId} with plan: ${planType}`);
       } else {
         logger.warn('Trial-aware callback indicates failure', {

@@ -350,7 +350,7 @@ class PaymentServiceClient {
         status: 'active',
         provider: 'razorpay',
         providerRef: paymentData.razorpaySubscriptionId || paymentData.subscriptionId,
-        trialUsed: false, // Set to false after successful trial payment
+        trialUsed: true, // ✅ CRITICAL FIX: Set to true after successful trial payment
         trialEndDate: trialEndDate,
         currentPeriodEnd: trialEndDate,
         razorpaySubscriptionId: paymentData.razorpaySubscriptionId,
@@ -487,6 +487,53 @@ class PaymentServiceClient {
         },
         error: error.response?.data?.error?.message || error.response?.data?.message || 'Failed to fetch trial configuration'
       };
+    }
+  }
+
+  /**
+   * ✅ NEW METHOD: Update trial used flag in payment microservice
+   * @param {string} userId - User ID
+   * @param {string} packageName - Package name (default: com.kids.story)
+   * @param {boolean} trialUsed - Whether trial has been used (default: true)
+   * @returns {Promise<Object>} Updated subscription data
+   */
+  async updateTrialUsedFlag(userId, packageName = 'com.kids.story', trialUsed = true) {
+    console.log('🎯 UPDATING TRIAL USED FLAG via payment microservice', {
+      userId,
+      packageName,
+      trialUsed,
+      baseUrl: this.baseUrl,
+      timestamp: new Date().toISOString()
+    });
+
+    try {
+      const response = await this.axiosInstance.post('/api/payment/update-trial-used', {
+        userId,
+        trialUsed
+      }, {
+        headers: this.getHeaders(userId, packageName)
+      });
+
+      console.log('✅ TRIAL USED FLAG UPDATED SUCCESSFULLY', {
+        userId,
+        packageName,
+        trialUsed,
+        updatedSubscription: response.data?.data,
+        timestamp: new Date().toISOString()
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('❌ FAILED TO UPDATE TRIAL USED FLAG', {
+        userId,
+        packageName,
+        trialUsed,
+        error: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
     }
   }
 }
