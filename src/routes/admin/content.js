@@ -716,4 +716,102 @@ router.patch('/:id/featured',
   }
 );
 
+// POST /admin/content/reorder - Reorder content (drag-and-drop support)
+router.post('/reorder',
+  adminAuth,
+  logAdminAction('REORDER_CONTENT'),
+  [
+    body('contentIds').isArray().withMessage('Content IDs must be an array'),
+    body('contentIds.*').isMongoId().withMessage('Invalid content ID'),
+    body('orderType').optional().isIn(['featured', 'trending', 'newCollection', 'general']).withMessage('Invalid order type')
+  ],
+  async (req, res) => {
+    try {
+      const { contentIds, orderType = 'general' } = req.body;
+
+      // Update sort order for each content item
+      const updatePromises = contentIds.map((contentId, index) => {
+        const updateData = {};
+
+        // Set sort order based on position in array
+        if (orderType === 'featured') {
+          updateData.featuredSortOrder = index;
+        } else if (orderType === 'trending') {
+          updateData.trendingSortOrder = index;
+        } else if (orderType === 'newCollection') {
+          updateData.newCollectionSortOrder = index;
+        } else {
+          updateData.sortOrder = index;
+        }
+
+        return Content.findByIdAndUpdate(contentId, updateData, { new: true });
+      });
+
+      const updatedContent = await Promise.all(updatePromises);
+
+      logger.info(`Content reordered by admin ${req.userId}: ${orderType} order updated for ${contentIds.length} items`);
+
+      res.success({
+        reorderedCount: updatedContent.length,
+        orderType,
+        contentIds
+      }, 'Content reordered successfully');
+
+    } catch (error) {
+      logger.error('Admin reorder content error:', error);
+      res.status(500).error(['Failed to reorder content'], 'Internal server error');
+    }
+  }
+);
+
+// POST /admin/content/bulk-update - Bulk update content properties
+router.post('/bulk-update',
+  adminAuth,
+  logAdminAction('BULK_UPDATE_CONTENT'),
+  [
+    body('contentIds').isArray().withMessage('Content IDs must be an array'),
+    body('contentIds.*').isMongoId().withMessage('Invalid content ID'),
+    body('updates').isObject().withMessage('Updates must be an object'),
+    body('updates.category').optional().isMongoId().withMessage('Invalid category ID'),
+    body('updates.isFeatured').optional().isBoolean(),
+    body('updates.isNewCollection').optional().isBoolean(),
+    body('updates.isTrendingNow').optional().isBoolean(),
+    body('updates.isActive').optional().isBoolean(),
+    body('updates.ageRange').optional().isIn(['3-5', '6-8', '9-12', '13+']),
+    body('updates.type').optional().isIn(['story', 'meditation', 'sound'])
+  ],
+  async (req, res) => {
+    try {
+      const { contentIds, updates } = req.body;
+
+      // Validate category if provided
+      if (updates.category) {
+        const { Category } = require('../../models');
+        const category = await Category.findById(updates.category);
+        if (!category || !category.isActive) {
+          return res.status(400).error(['Invalid or inactive category'], 'Category validation failed');
+        }
+      }
+
+      // Perform bulk update
+      const result = await Content.updateMany(
+        { _id: { $in: contentIds } },
+        { $set: updates }
+      );
+
+      logger.info(`Bulk content update by admin ${req.userId}: ${result.modifiedCount} items updated`);
+
+      res.success({
+        updatedCount: result.modifiedCount,
+        matchedCount: result.matchedCount,
+        updates
+      }, 'Content bulk updated successfully');
+
+    } catch (error) {
+      logger.error('Admin bulk update content error:', error);
+      res.status(500).error(['Failed to bulk update content'], 'Internal server error');
+    }
+  }
+);
+
 module.exports = router;

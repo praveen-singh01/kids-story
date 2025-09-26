@@ -162,6 +162,24 @@ const contentSchema = new mongoose.Schema({
     min: 0,
     max: 5
   },
+
+  // Sort order fields for different collections
+  sortOrder: {
+    type: Number,
+    default: 0
+  },
+  featuredSortOrder: {
+    type: Number,
+    sparse: true
+  },
+  newCollectionSortOrder: {
+    type: Number,
+    sparse: true
+  },
+  trendingSortOrder: {
+    type: Number,
+    sparse: true
+  },
   metadata: {
     type: contentMetadataSchema,
     default: () => ({})
@@ -214,6 +232,12 @@ contentSchema.index({ publishedAt: -1, isActive: 1 });
 contentSchema.index({ defaultLanguage: 1, isActive: 1 });
 contentSchema.index({ availableLanguages: 1, isActive: 1 });
 contentSchema.index({ title: 'text', description: 'text' }); // Text search index
+
+// Sort order indexes for collections
+contentSchema.index({ sortOrder: 1, isActive: 1 });
+contentSchema.index({ featuredSortOrder: 1, isFeatured: 1, isActive: 1 });
+contentSchema.index({ newCollectionSortOrder: 1, isNewCollection: 1, isActive: 1 });
+contentSchema.index({ trendingSortOrder: 1, isTrendingNow: 1, isActive: 1 });
 
 // Pre-save middleware to generate slug and handle language setup
 contentSchema.pre('save', function(next) {
