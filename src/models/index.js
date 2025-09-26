@@ -5,6 +5,7 @@ const Favorite = require('./Favorite');
 const Category = require('./Category');
 const Progress = require('./Progress');
 const Avatar = require('./Avatar');
+const ContactSupport = require('./ContactSupport');
 
 module.exports = {
   User,
@@ -13,5 +14,6 @@ module.exports = {
   Favorite,
   Category,
   Progress,
-  Avatar
+  Avatar,
+  ContactSupport
 };

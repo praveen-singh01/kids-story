@@ -26,6 +26,7 @@ const subscriptionRoutes = require('./routes/subscriptions');
 const paymentRoutes = require('./routes/payment');
 const healthRoutes = require('./routes/health');
 const adminRoutes = require('./routes/admin');
+const contactSupportRoutes = require('./routes/contactSupport');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -109,6 +110,7 @@ app.use(`/api/${API_VERSION}/subscriptions`, subscriptionRoutes);
 app.use(`/api/${API_VERSION}/payment`, paymentRoutes);
 app.use(`/api/${API_VERSION}/admin`, adminRoutes);
 app.use(`/api/${API_VERSION}/health`, healthRoutes);
+app.use(`/api/${API_VERSION}/contact-support`, contactSupportRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
