@@ -86,9 +86,9 @@ contactSupportSchema.statics.getOrCreateDefault = async function(createdBy) {
 // Instance method to format for API response
 contactSupportSchema.methods.toApiResponse = function() {
   return {
-    Whatsapp: this.whatsappUrl,
-    Call: this.phone,
-    Email: this.email
+    whatsapp: this.whatsappUrl,
+    call: this.phone,
+    email: this.email
   };
 };
 
